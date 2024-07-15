@@ -1,0 +1,477 @@
+#########################################################
+# Deploy a whole basic testeb with VirtualBox and LXC ###
+#########################################################
+
+You can deploy a basic testeb scenario making use of a Ubuntu server VM over VirtualBox
+
+Ubuntu 16.04 Virtual Machine (1024Mb RAM, 20Gb HD)
+
+This VM can run the netopeer client and you can launch inside different server instances making use of LXC
+
+Note: In order to get network connectivy from the VM and from containers, and to be able to access through SSH from the host device to the VM you can configure two network interfaces in the VM: 1) NAT mode; 2) host-only (configure a host-only network in the VirtualBox preferences, i.e. 192.168.56.0). 
+
+Once installed the host you can install lxc this way:
+
+$ sudo apt-get update
+$ sudo apt install lxc bridge-utils libvirt-bin debootstrap
+$ sudo lxc-create -t ubuntu -n netoserver1
+
+In Host, modify /etc/network/interfaces
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+auto enp0s8
+iface enp0s8 inet static
+address 192.168.56.226 
+netmask 255.255.255.0
+
+auto br1
+iface br1 inet manual
+       bridge_ports none
+       bridge_stp off
+
+auto br2
+iface br2 inet manual
+       bridge_ports none
+       bridge_stp off
+
+auto br3
+iface br3 inet manual
+       bridge_ports none
+       bridge_stp off
+       
+       
+
+Configure network interfaces for container netoserver1
+------------------------------------------------------
+cd /var/lib/lxc/netoserver1
+vim config
+
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br1
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br2
+lxc.network.flags = up
+
+$ sudo lxc-start -F -n netoserver1
+
+---------
+netoserver1:
+---------
+
+Edit /etc/network/interfaces:
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 10.0.1.204
+netmask 255.255.255.0
+gateway 10.0.1.1
+
+dns-nameservers 8.8.8.8
+
+auto eth1
+iface eth1 inet static
+  address 192.160.201.2
+  netmask 255.255.255.0
+
+auto eth2
+iface eth2 inet static
+  address 192.168.123.100
+  netmask 255.255.255.0
+  up route add -net 10.1.0.0 netmask 255.255.255.0 gw 192.168.123.200
+  down route del -net 10.1.0.0 netmask 255.255.255.0 gw 192.168.123.200
+
+
+
+#########################################################
+# Install a Netopeer server with netopeer-ipsec support #
+#########################################################
+
+On the container servers (netoserver1)
+    
+$ cd /home/ubuntu/
+
+1. Install dependences
+
+$ sudo apt-get install git libpcre3-dev flex bison devscripts pkg-config libssl-dev doxygen cmake libpthread-stubs0-dev libpthread-workqueue-dev
+# sudo apt-get install build-essential bison flex libpcre3-dev libev-dev libavl-dev libprotobuf-c-dev protobuf-c-compiler valgrind swig python-dev lua5.2
+
+
+2. Install libyang
+
+$git clone https://github.com/CESNET/libyang.git
+(si error SSL --> git config --global http.sslVerify false)
+
+$ cd libyang; mkdir build; cd build
+$ cmake .. ; make; sudo make install
+$ cd ../..
+
+
+3. Install libssh
+
+$ git clone http://git.libssh.org/projects/libssh.git
+$ cd libssh; mkdir build; cd build
+$ cmake .. ;make; sudo make install
+$ cd ../..
+
+4. Install cmocka
+
+$ git clone git://git.cryptomilk.org/projects/cmocka.git
+$ cd cmocka; git checkout tags/cmocka-1.0.1; mkdir build; cd build
+$ cmake .. ; make; sudo make install
+$ cd ../..
+
+
+5. Install libnetconf2
+
+$ git clone https://github.com/CESNET/libnetconf2.git
+$ cd libnetconf2; mkdir build; cd build
+$ cmake .. ; make; sudo make install
+$ cd ../..
+
+
+6. Install sysrepo
+
+$ git clone https://github.com/sysrepo/sysrepo.git
+$ cd sysrepo; mkdir build; cd build
+$ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+$ make ;sudo make install
+$ cd ../..
+
+
+7. Install netopeer2
+
+$ git clone https://github.com/CESNET/netopeer2.git
+$ cd netopeer2/server; mkdir build; cd build
+$ cmake ..; make; sudo make install
+$ cd ../..
+
+
+8. Install Strongswan 
+
+$ sudo apt-get install ipsec-tools build-essential libpam0g-dev wget
+$ wget https://download.strongswan.org/strongswan-5.5.0.tar.bz2
+$ bunzip2 strongswan-5.5.0.tar.bz2 
+$ tar -xvf strongswan-5.5.0.tar
+$ cd strongswan-5.5.0
+You need to activate the swanctl plugin (VICI)
+$ ./configure --enable-eap-identity --enable-eap-md5 --enable-eap-mschapv2 --enable-eap-tls --enable-eap-ttls --enable-eap-peap --enable-eap-tnc --enable-eap-dynamic --enable-eap-radius --enable-xauth-eap --enable-xauth-pam --enable-dhcp --enable-openssl --enable-addrblock --enable-unity --enable-certexpire --enable-radattr --enable-swanctl --disable-gmp
+
+NOTE: As of July 2017, there exists a bug that requires to edit the file "strongswan-5.5.0/src/libstrongswan/utils/utils/memory.h" and add "#include <stdint.h>" at the beginning.
+
+$ make
+$ sudo make install
+
+To start IKE:    
+$ sudo ipsec start
+    
+Configuration files in /usr/local/etc 
+You can find an example of swanctl configuration file in conf-examples/
+    
+Note: be sure libvici.h is located at /usr/local/include otherwise copy it there from the strongswan source code. In particular you can create a symbolic link such as:
+
+$ sudo ln -s /home/ubuntu/strongswan-5.5.0/src/libcharon/plugins/vici/libvici.h /usr/local/include/libvici.h
+
+If libvici library can not be found then:
+$ sudo vi/etc/environment 
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/ipsec
+
+9. Start netconf server   
+
+
+$ sudo sysrepod -d -l 3
+$ sudo sysrepo-plugind
+$ sudo netopeer2-server -d -v 2
+
+
+$ sudo sysrepod -d -l 3
+$ sudo sysrepo-plugind
+$ sudo netopeer2-server -d -v 2
+
+10. Install cfgipsec2
+
+$ git clone https://gitlab.atica.um.es/gabilm.um.es/cfgipsec2.git
+$ cd cfgipsec2
+$ make
+$ make install
+
+# sudo ./ietf-ipsec -c {case1 | case2} # default case2
+
+
+On host VM: 
+
+11. Install Netopeer2-cli 
+
+- At netopeer2-cli node repeat steps 1 to 6 
+- In step 7, make use of netopeer2/cli instead of netopeer2/server
+
+12. Connect from Netopper2-cli
+
+# netopeer2-cli
+> connect --host 10.0.1.204 --ssh --login ubuntu
+> subscribe
+> get-config --source=running # should return empty DATA
+
+13. Test example
+
+These examples establish the configuration at netopeer1 to setup a host to host IPsec connection (transport mode) between nodes 192.168.123.100 and 192.168.123.200. Deploy the whole scenario (below) and configure netopeer2 with the corresponding xml files.
+
+For case 1: 
+> edit-config --target running --config=/home/gabilm/cfgipsec2/client-xmls/case1/h2h_transport_esp_enc_auth_h1_spd_pad.xml
+> edit-config --target running --config=/home/gabilm/cfgipsec2/client-xmls/case1/h2h_transport_esp_enc_auth_h1_ike.xml
+
+For case 2: 
+
+> edit-config --target running --config=/home/gabilm/cfgipsec2/client-xmls/case2/h2h_transport_esp_enc_auth_h1.xml
+
+Check the IPsec stack:
+On the netopeer1 node run:
+
+$ sudo ip -s x state
+$ sudo ip -s x policy
+
+
+
+
+##########################
+## Deploy the scenario ###
+##########################
+
+----------
+Scenario
+----------
+                                 Controller (.1) 
+                                       ||                 
+      |---------------------|-----(10.0.1.0/24)---------|-----------------|
+   (.102)                (.204)                       (.234)             (.18)      
+host1(.254) ———-- (.2)netoserver1(.100)——---—(.200)netoserver2(.2)—----——(.254):host2
+    (192.168.201.0/24)        (192.168.123.0/24)           (192.168.202.0/24)
+
+---------
+Guest:
+---------
+
+
+Install IPsec/Strongswan/libnetconf/etc components in netoserver1 as described before, then:
+
+Creat a copy of the container for each entity: host1, netoserver2:
+sudo lxc-copy --name netoserver1 -N netoserver2
+sudo lxc-copy --name netoserver1 -N host1
+sudo lxc-copy --name netoserver1 -N host2
+
+
+In Host, modify /etc/network/interfaces
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+auto enp0s8
+iface enp0s8 inet static
+address 192.168.56.226 #Your address to connnect the VMs
+netmask 255.255.255.0
+
+auto br1
+iface br1 inet manual
+       bridge_ports none
+       bridge_stp off
+
+auto br2
+iface br2 inet manual
+       bridge_ports none
+       bridge_stp off
+
+auto br3
+iface br3 inet manual
+       bridge_ports none
+       bridge_stp off
+
+
+Configure network interfaces for container host1
+------------------------------------------------
+cd /var/lib/lxc/host1
+vim config
+
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+
+#add the following lines to connect container host1 to bridge br1
+lxc.network.type = veth
+lxc.network.link = br1
+lxc.network.flags = up
+
+Configure network interfaces for container netoserver1
+------------------------------------------------------
+cd /var/lib/lxc/netoserver1
+vim config
+
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br1
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br2
+lxc.network.flags = up
+
+Configure network interfaces for container netoserver2
+------------------------------------------------------
+cd /var/lib/lxc/netoserver2
+vim config
+
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br3
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br2
+lxc.network.flags = up
+
+Configure network interfaces for container host2
+------------------------------------------------
+cd /var/lib/lxc/host2
+vim config
+
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+
+lxc.network.type = veth
+lxc.network.link = br3
+lxc.network.flags = up
+
+---------
+Host1:
+---------
+
+Edit /etc/network/interfaces:
+
+auto eth0
+iface eth0 inet static
+address 10.0.1.102
+netmask 255.255.255.0
+gateway 10.0.1.1
+
+auto eth1
+iface eth1 inet static
+  address 192.168.201.254
+  netmask 255.255.255.0
+  up route add -net 192.168.123.0 netmask 255.255.255.0 gw 192.168.201.2
+  down route del -net 192.168.123.0 netmask 255.255.255.0 gw 192.168.201.2
+  up route add -net 192.168.202.0 netmask 255.255.255.0 gw 192.168.201.2
+  down route del -net 192.168.202.0 netmask 255.255.255.0 gw 192.168.201.2
+
+- Reload network configuration
+
+---------
+netoserver1:
+---------
+
+Edit /etc/network/interfaces
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 10.0.1.204
+netmask 255.255.255.0
+gateway 10.0.1.1
+
+auto eth1
+iface eth1 inet static
+  address 192.168.201.2
+  netmask 255.255.255.0
+
+auto eth2
+iface eth2 inet static
+  address 192.168.123.100
+  netmask 255.255.255.0
+  up route add -net 10.1.0.0 netmask 255.255.255.0 gw 192.168.123.200
+  down route del -net 10.1.0.0 netmask 255.255.255.0 gw 192.168.123.200
+  
+---------
+netoserver2:
+---------
+
+Edit /etc/network/interfaces:
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 10.0.1.234
+netmask 255.255.255.0
+gateway 10.0.1.1
+
+auto eth1
+iface eth1 inet static
+  address 192.168.202.2
+  netmask 255.255.255.0
+
+auto eth2
+iface eth2 inet static
+  address 192.168.123.200
+  netmask 255.255.255.0
+  up route add -net 10.0.0.0 netmask 255.255.255.0 gw 192.168.123.100
+  down route del -net 10.0.0.0 netmask 255.255.255.0 gw 192.168.123.100
+  
+---------
+host2:
+---------
+
+Edit /etc/network/interfaces:
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address 10.0.1.18
+netmask 255.255.255.0
+gateway 10.0.1.1
+
+auto eth1
+iface eth1 inet static
+  address 192.168.202.254
+  netmask 255.255.255.0
+  up route add -net 192.168.123.0 netmask 255.255.255.0 gw 192.168.202.2
+  down route del -net 192.168.123.0 netmask 255.255.255.0 gw 192.168.202.2
+  up route add -net 192.168.201.0 netmask 255.255.255.0 gw 192.168.202.2
+  down route del -net 192.168.201.0 netmask 255.255.255.0 gw 192.168.202.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

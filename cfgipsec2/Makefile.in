@@ -1,0 +1,35 @@
+TARGET = @TARGET@
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/ipsec/:/usr/lib/ipsec
+
+CC = @CC@
+LIBS = @LIBS@ @LIBVICI@
+CFLAGS = @CFLAGS@
+DEPS = @DEPS@
+LDFLAGS = @LDFLAGS@
+		
+
+OBJ = $(TARGET).o \ @OBJ@
+
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(TARGET) : $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
+	rm -f *.o base/*.o *~ core
+
+.PHONY: install
+
+install:
+	sysrepoctl --install --yang=./$(TARGET).yang --owner=root:root --permissions=666
+
+.PHONY: uninstall
+
+uninstall:
+	sysrepoctl --uninstall --module=$(TARGET)
+
+.PHONY: clean
+
+clean:
+	rm -f *.o base/*.o *~ core 

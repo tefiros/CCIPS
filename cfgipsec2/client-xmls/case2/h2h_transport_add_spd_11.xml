@@ -1,0 +1,43 @@
+<ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<ipsec>
+  <spd>
+	<spd-entry>
+		<rule-number>11</rule-number>
+		<priority>0</priority>
+		<names>
+			<name>out/192.168.123.100/192.168.123.200</name>
+		</names>
+		<condition>
+			<traffic-selector-list>
+				<ts-number>2</ts-number>
+				<direction>OUTBOUND</direction>
+				<local-addresses>
+					<start>192.168.123.100/32</start>
+ 					<end>192.168.123.100/32</end>
+				</local-addresses>
+				<remote-addresses>
+					<start>192.168.123.200/32</start>
+					<end>192.168.123.200/32</end>
+				</remote-addresses>
+				<next-layer-protocol>TCP</next-layer-protocol>
+				<local-ports>
+					<start>0</start>
+					<end>0</end>
+				</local-ports>
+				<remote-ports>
+					<start>0</start>
+					<end>0</end>
+				</remote-ports>
+			</traffic-selector-list>
+		</condition>
+		<processing-info>
+			<action>PROTECT</action>
+			<ipsec-sa-cfg>
+				<security-protocol>esp</security-protocol>
+				<mode>TRANSPORT</mode>
+			</ipsec-sa-cfg>
+		</processing-info>
+	</spd-entry>
+  </spd>
+</ipsec>
+</ietf-ipsec>
