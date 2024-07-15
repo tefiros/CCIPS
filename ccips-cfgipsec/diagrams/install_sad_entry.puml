@@ -1,0 +1,45 @@
+@startuml
+Actor C as "CCIPS Controller"
+participant S as "Sysrepo"
+box CCIPS
+participant sac as "sad_entry_change_cb"
+participant sacl as "addSAD_entry"
+participant rsa as "readSAD_entry"
+participant sal as "add_sad_node"
+database l as "init_sad_node"
+participant pfa as "pf_addsad"
+end box
+participant K as "kernel"
+autonumber
+C -> S: Request install of SAD entry.
+S -> sac: Notify about a change in the XPATH
+sac -> sac: Identify that a new SAD entry is added
+autonumber stop
+sac -> sac: Identify SAD entry ID that has been added
+sac -> sacl: Send SAD entry identifier (basically the name) + new xpath
+autonumber resume
+sacl -> sacl: Initialize an empty sad_entry_node 
+autonumber stop
+sacl -> rsa: Request the new sad entry, pass\nentire xpath and empty sad_entry_node)
+rsa -> S: Request new sad entry by providing the entire xpath
+S -> rsa: If entry exists forward the information
+rsa -> rsa: Parse received information\nand fill empty sad_entry_node
+rsa -> sacl: Return correct parsing
+autonumber resume
+sacl -> sal: Request to store new sad_entry_node
+autonumber stop
+sal -> l: Store sad_entry_node
+autonumber resume
+sal -> pfa: Request to install the\nsad_entry_node in the kernel
+pfa -> pfa: Generate SADB_ADD message\nto add sad_entry_node
+autonumber stop
+pfa -> K: Install SAD_ENTRY
+K -> pfa: Install confirmation
+autonumber resume
+pfa -> sal: Install confirmation
+autonumber stop
+sal -> sacl: Install confirmation
+sal -> sac: Install confirmation
+sac -> S: Install confirmation
+S -> C: Confirmation of the installtion
+@enduml

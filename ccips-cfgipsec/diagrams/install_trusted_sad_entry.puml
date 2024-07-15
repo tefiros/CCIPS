@@ -1,0 +1,70 @@
+@startuml
+Actor C as "CCIPS Controller"
+participant S as "Sysrepo"
+box CCIPS RA
+participant sac as "sad_entry_change_cb"
+participant sacl as "addSAD_entry"
+participant rsa as "readSAD_entry"
+participant sal as "add_sad_node"
+database l as "init_sad_node"
+participant ats as "add_trusted_sad_entry"
+participant pfa as "pf_addsad"
+box CCIPS TA
+participant hm as "handle_message"
+participant hncm as "handle_new_conf_message"
+database lta as "trusted_init_sad_node"
+end box 
+end box
+participant K as "kernel"
+autonumber
+C -> S: Request install of SAD entry.
+S -> sac: Notify about a change in the XPATH
+sac -> sac: Identify that a new SAD entry is added
+autonumber stop
+sac -> sac: Identify SAD entry ID that has been added
+sac -> sacl: Send SAD entry identifier (basically the name) + new xpath
+autonumber resume
+sacl -> sacl: Initialize an empty sad_entry_node 
+autonumber stop
+sacl -> rsa: Request the new sad entry, pass\nentire xpath and empty sad_entry_node)
+rsa -> S: Request new sad entry by providing the entire xpath
+S -> rsa: If entry exists forward the information
+rsa -> rsa: Parse received information\nand fill empty sad_entry_node
+rsa -> sacl: Return correct parsing
+autonumber 4.1
+sacl -> ats: Request store and Decrypt SAD entry
+autonumber stop
+ats -> hm: Send NEW_CONFIG_MSG with\nJSON encoded sad_entry_node
+autonumber 4.2
+hm -> hm: Parses JSON message 
+autonumber stop
+hm -> hm: Identify type of message
+autonumber 4.3
+hm -> hncm: Request Decrypt and store
+autonumber stop
+hncm -> hncm: Decrypts using private key
+hncm -> lta : Store decyrpted sad_entry_node
+
+autonumber 4.4
+hncm -> hm: Return new sad_entry_node
+autonumber stop
+hm -> ats: Return new sad_entry_node decrypted values in INSERT_ENTRY_MSG
+ats -> sacl: Copy new values with the ones received
+autonumber 5
+sacl -> sal: Request to store new sad_entry_node
+autonumber stop
+sal -> l: Store sad_entry_node
+autonumber resume
+sal -> pfa: Request to install the\nsad_entry_node in the kernel
+pfa -> pfa: Generate SADB_ADD message\nto add sad_entry_node
+autonumber stop
+pfa -> K: Install SAD_ENTRY
+K -> pfa: Install confirmation
+autonumber resume
+pfa -> sal: Install confirmation
+autonumber stop
+sal -> sacl: Install confirmation
+sal -> sac: Install confirmation
+sac -> S: Install confirmation
+S -> C: Confirmation of the installtion
+@enduml
