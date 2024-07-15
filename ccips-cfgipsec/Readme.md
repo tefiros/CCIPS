@@ -42,8 +42,6 @@ This directory has all the code that is needed to run the cfgipsec application:
 ### cmd
 In this directory it is defined the "entry points" of the code that is going to run the ccips.
 * `i2nsf_ra`: Specifies the code to run the RA side of the application `main.c`, and the imports and compilation options needed `CMAKELists.txt
-* `i2nsf_enarx`: Specifies the RUST code that is going to be neede to run in the TEE launched by the ENARX framework. It also specifies a CMAKE that basically is use to export all the libraries needed from the CCIPS so it can be imported to RUST.
-    * Inside the directory `i2nsf_enarx/enarx`, we specified in the **`Enarx.toml`** file, the configuration such as the tcp socket and port, and in **`launch.txt`** with the command to launch enarx.  In the **`Cargo.toml`** it is specified some values that are needed by the Cargo compiler to create the enarx application in WASM. 
 
 ### yang
 In this directory they are stored all the YANG models that are needed by the cfgipsec application, primarly used for the docker installation, but this files need to be installed in a standalone version (without docker).
@@ -120,29 +118,8 @@ At this point the controller will have received the expire notification with the
 ### Hard-Lifetime:
 This process is the same as the one followed for the soft-lifetime case. However, before sending the NETCONF notification (in this  case telling that is hard-expire notification), it proceeds to delete de SAD entry from the sysrepo datastore by calling `send_delete_SAD_request`. 
 Take into account that, after a hard-lifetime notifiaction, the SAD entry is automatically removed from the kernel.  
-## TEE:
-### With Enarxs:
-<!-- #### Compilation details
-When Running the ENARX version we must take into account to considerations:
-* The part running in the RA, needs to be compiled as the default option but we need to specify the option `ENRAX_RA` to ON like below
-```bash=
-cmake -D ENARX_RA=ON ..
-```
-* When compilling the Enarx WASM binary we need first to have compatible [wasi compiler](https://github.com/WebAssembly/wasi-sdk/releases/tag/wasi-sdk-17). In this case, we will need to compile the code under the `build` directory as follows:
-```bash=
-    cmake -D ENARX_TA=ON ..
-    make
-    make install
-```
-Once it has been installed you can check under the lib directory (which is created in the root of the project), that it has been generated some linkables files that will be used later by the RUST compiler.
 
-With this files, we can go now to `repo_directory/` -->
-The communication between the RA and TA of the CCIPS application when using Enarx, for the moment relies in a TCP connection (without any type of encryption), where the TA works as a server. It provides and endpoint, where the RA sends the request using a JSON format, with the library [parson](https://github.com/kgabis/parson).
 
-#### Startup
-When the cfgipsec starts, there should two different process running:
-* The main process of the cfgipsec which will be compiled with the option **ENARX_RA** options which will enable the `add_compile_definitions` *Enarx* and *Trusted*. When starting the application it will try to connect to the Trusted application running inside Enarx through a TCP connection.
-* The other process runs inside a container and inside the Enarx Framework. It is a rust programm, that is compiled using some of the cfgipsec exported libraries. It provides a TCP endpoint to interact with his internal API.
 
 #### SAD entries Mgmt:
 
