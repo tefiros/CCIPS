@@ -1,0 +1,32 @@
+{
+  "nodes": [
+    {
+      "networkInternal": "10.0.1.0/24",
+      "ipData": "192.1.1.1",
+      "ipControl": "192.168.165.169"
+    },
+    {
+      "networkInternal": "10.0.2.0/24",
+      "ipData": "192.2.2.1",
+      "ipControl": "192.168.165.93"
+    }
+  ],
+  "encAlg": [
+    "des"
+  ],
+  "intAlg": [
+    "hmac-md5-96"
+  ],
+  "softLifetime": {
+    "nBytes": 0,
+    "nPackets": 0,
+    "nTime": 20,
+    "nTimeIdle": 0
+  },
+  "hardLifetime": {
+    "nBytes": 0,
+    "nPackets": 0,
+    "nTime": 30,
+    "nTimeIdle": 0
+  }
+}

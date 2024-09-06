@@ -1,0 +1,13 @@
+<ipsec-ikeless
+  xmlns="urn:ietf:params:xml:ns:yang:ietf-i2nsf-ikeless"
+  xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <sad>
+            <sad-entry nc:operation="delete">
+                <name>out/192.168.201.254/192.168.202.254</name>
+                <reqid>12</reqid>
+                <ipsec-sa-config>
+                    <spi>34502</spi>
+                </ipsec-sa-config>  
+            </sad-entry>
+        </sad>
+</ipsec-ikeless>

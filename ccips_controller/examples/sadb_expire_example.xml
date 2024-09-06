@@ -1,0 +1,9 @@
+<notification
+        xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    <eventTime>2023-02-21T10:26:07Z</eventTime>
+    <sadb-expire
+            xmlns="urn:ietf:params:xml:ns:yang:ietf-i2nsf-ikeless">
+        <ipsec-sa-name>out/192.168.201.254/192.168.202.254</ipsec-sa-name>
+        <soft-lifetime-expire>true</soft-lifetime-expire>
+    </sadb-expire>
+</notification>

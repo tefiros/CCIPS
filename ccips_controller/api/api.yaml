@@ -1,0 +1,349 @@
+openapi: 3.0.0
+info:
+  title: CCIPS API
+  version: '1.0'
+  description: API to deploy the IPsec tunnel using the CCIPS controller
+  contact:
+    email: mattinantartiko.elorzaforcada@telefonica.com
+servers:
+  - url: 'http://localhost:5000'
+paths:
+  /ccips:
+    post:
+      summary: Create IPsec Tunnel
+      operationId: api.create_i2nsf
+      responses:
+        '200':
+          $ref: '#/components/responses/IPsecInfo'
+        '500':
+          $ref: '#/components/responses/Error'
+      description: Create the I2NSF IPSec tunnel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentConfig'
+            examples:
+              example-1:
+                value:
+                  nodes:
+                    - networkInternal: 192.168.100.0/24
+                      ipData: 10.0.0.100
+                      ipControl: 192.168.165.101
+                    - networkInternal: 192.168.200.0/24
+                      ipData: 10.0.0.61
+                      ipControl: 192.168.165.141
+                  encAlg:
+                    - 3-des-cbc
+                  intAlg:
+                    - sha1
+                  softLifetime: 120
+                  hardLifetime: 140
+              example-2:
+                value:
+                  nodes:
+                    - networkInternal: 192.168.200.0/24
+                      ipData: 81.44.28.113
+                      ipControl: 10.0.0.10
+                    - networkInternal: 10.10.244.236/24
+                      ipData: 195.37.154.72
+                      ipControl: 10.10.244.236
+                  encAlg:
+                    - aes-cbc
+                  intAlg:
+                    - sha2-256
+                  softLifetime: 25
+                  hardLifetime: 50
+        description: ''
+    parameters: []
+  '/ccips/{uuid}':
+    get:
+      summary: Get IPsec tunnel status
+      tags:
+        - I2NSF
+      responses:
+        '200':
+          $ref: '#/components/responses/IPsecInfo'
+        '400':
+          $ref: '#/components/responses/Error'
+      operationId: api.status_i2nsf
+      description: Get the current status of the IPsec Tunnel
+    parameters:
+      - schema:
+          type: string
+          format: uuid
+        name: uuid
+        in: path
+        required: true
+        description: Identification of the IPsec tunnel
+    delete:
+      summary: Delete IPsec tunnel
+      operationId: api.delete_i2nsf
+      responses:
+        '200':
+          $ref: '#/components/responses/Response'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+      description: Remove I2NSF
+      tags:
+        - I2NSF
+  /ccips/certificate:
+    post:
+      summary: Upload X.509 Certificate on string format
+      operationId: api.upload_certificate
+      responses:
+        '200':
+          $ref: '#/components/responses/Response'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                certificate:
+                  type: string
+                  description: X.509 certificate in PEM format
+              required:
+                - certificate
+            examples:
+              example-1:
+                value:
+                  certificate: "hello-world"
+      tags:
+          - I2NSF
+  '/ccips/certificate/{uuid}':
+    get:
+      summary: Get Certificate by passing certificate':' uuid
+      operationId: api.get_certificate
+      parameters:
+        - in: query
+          name: filename
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Name of the certificate file
+      responses:
+        '200':
+          description: Certificate retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  certificate:
+                    type: string
+                    example: "certificate:hello-world"
+        '500':
+          $ref: '#/components/responses/Error'
+      tags:
+        - I2NSF
+components:
+  schemas:
+    Node:
+      title: Node
+      type: object
+      properties:
+        networkInternal:
+          type: string
+        ipData:
+          type: string
+        ipControl:
+          type: string
+        ipDMZ:
+          type: string
+          format: ipv4
+    DeploymentConfig:
+      type: object
+      x-stoplight:
+        id: 642b7bab3b4ee
+      x-examples:
+        Example 1:
+          nodes:
+            - networkInternal: string
+              ipData: string
+              ipControl: string
+              ipDMZ: 192.168.0.1
+          encAlg:
+            - des
+          intAlg:
+            - hmac-md5-96
+          softLifetime:
+            nBytes: 0
+            nPackets: 0
+            nTime: 0
+            nTimeIdle: 0
+          hardLifetime:
+            nBytes: 0
+            nPackets: 0
+            nTime: 0
+            nTimeIdle: 0
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+        encAlg:
+          type: array
+          items:
+            type: string
+            enum:
+              - des
+              - 3des
+              - aes-cbc
+        intAlg:
+          type: array
+          items:
+            type: string
+            enum:
+              - hmac-md5-96
+              - hmac-md5-128
+              - hmac-sha1-96
+              - hmac-sha1-160
+              - sha2-256
+        softLifetime:
+          $ref: '#/components/schemas/LifetimeConfig'
+        hardLifetime:
+          $ref: '#/components/schemas/LifetimeConfig'
+      required:
+        - nodes
+        - encAlg
+        - intAlg
+    LifetimeConfig:
+      title: LifetimeConfig
+      x-stoplight:
+        id: 6w43tbziq1wyt
+      type: object
+      description: Configuration of the lifetime values used by the tunnel
+      properties:
+        nBytes:
+          type: number
+          default: 0
+          minimum: 0
+        nPackets:
+          type: number
+          default: 0
+          minimum: 0
+        nTime:
+          type: number
+          minimum: 10
+          default: 10
+        nTimeIdle:
+          type: number
+          minimum: 0
+          exclusiveMinimum: false
+          default: 0
+      x-examples:
+        Example 1:
+          nBytes: 0
+          nPackets: 0
+          nTime: 20
+          nTimeIdle: 0
+  responses:
+    IPsecInfo:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              nodes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Node'
+              encAlg:
+                type: string
+              intAlg:
+                type: string
+              status:
+                type: string
+              softLifetime:
+                type: number
+              hardLifetime:
+                type: number
+          examples:
+            example-1:
+              value:
+                  id: d7a83420-31fc-43eb-ae86-ddf891c9261b
+                  nodes:
+                    - ipControl: 192.168.165.141
+                      ipData: 10.0.0.61
+                      networkInternal: 192.168.200.0/24
+                    - ipControl: 192.168.165.101
+                      ipData: 10.0.0.161
+                      networkInternal: 192.168.100.0/24
+                  encAlg: 3-des-cbc
+                  intAlg: sha1
+                  softLifetime: 25
+                  hardLifetime: 50
+                
+    Error:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            description: ''
+            type: object
+            x-examples:
+              example-1:
+                code: 500
+                message: string
+            properties:
+              code:
+                type: number
+              message:
+                type: string
+                minLength: 1
+              description:
+                type: string
+            required:
+              - code
+              - message
+          examples:
+            '400':
+              value:
+                code: 500
+                message: Tunnel Not found
+                description: ''
+            '500':
+              value:
+                code: 500
+                description: Node is down
+                message: Internal server error
+    Response:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            description: ''
+            type: object
+            x-examples:
+              example-1:
+                code: 500
+                message: Tunnel Not found
+                description: ''
+            properties:
+              code:
+                type: number
+              message:
+                type: string
+                minLength: 1
+            required:
+              - code
+              - message
+          examples:
+            example-1:
+              value:
+                code: 200
+                message: I2NSF Removed
+  requestBodies: {}
