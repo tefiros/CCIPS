@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../src/constants.h
+
+/home/debian/ipsec_tests/ipsec_interactor/src/spd_entry/spd_entry.c
+spd_entry.h
+/home/debian/ipsec_tests/ipsec_interactor/src/spd_entry/spd_entry.h
+
+/home/debian/ipsec_tests/ipsec_interactor/src/spd_entry/spd_entry.h
+stdio.h
+-
+stdbool.h
+-
+constants.h
+/home/debian/ipsec_tests/ipsec_interactor/src/spd_entry/constants.h
+

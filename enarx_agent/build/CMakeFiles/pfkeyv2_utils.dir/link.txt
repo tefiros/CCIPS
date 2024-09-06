@@ -1,0 +1,2 @@
+/usr/bin/ar qc libpfkeyv2_utils.a  CMakeFiles/pfkeyv2_utils.dir/src/pfkeyv2_utils/pfkeyv2_utils.c.o CMakeFiles/pfkeyv2_utils.dir/src/pfkeyv2_utils/pfkeyv2_entry.c.o
+/usr/bin/ranlib libpfkeyv2_utils.a

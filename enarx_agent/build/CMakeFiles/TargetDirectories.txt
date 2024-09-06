@@ -1,0 +1,10 @@
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/rebuild_cache.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/edit_cache.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/I2NSF.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/sad_entry.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/log.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/utils.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/sysrepo_utils.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/parson.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/pfkeyv2_utils.dir
+/home/debian/ipsec_tests/ipsec_interactor/build/CMakeFiles/spd_entry.dir

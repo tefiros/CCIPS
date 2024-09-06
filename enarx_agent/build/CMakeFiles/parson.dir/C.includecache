@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/debian/ipsec_tests/ipsec_interactor/parson/parson.c
+parson.h
+/home/debian/ipsec_tests/ipsec_interactor/parson/parson.h
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+ctype.h
+-
+math.h
+-
+errno.h
+-
+
+/home/debian/ipsec_tests/ipsec_interactor/parson/parson.h
+stddef.h
+-
+
