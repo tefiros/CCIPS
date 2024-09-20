@@ -1,0 +1,11 @@
+<ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<ipsec>
+  <spd>
+  <spd-entry nc:operation="delete">
+    <rule-number>12</rule-number>
+  </spd-entry>
+  </spd>
+</ipsec>
+</ietf-ipsec>
+
+

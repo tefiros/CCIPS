@@ -1,0 +1,55 @@
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<ipsec>
+<sad>
+	<sad-entry>
+		<spi>SPI_IN</spi>
+		<anti-replay-window>32</anti-replay-window>
+		<rule-number>0</rule-number>
+		<local-addresses>
+			<start>REMOTE_ADDRESS/32</start>
+ 			<end>REMOTE_ADDRESS/32</end>
+		</local-addresses>
+		<remote-addresses>
+			<start>LOCAL_ADDRESS/32</start>
+			<end>LOCAL_ADDRESS/32</end>
+		</remote-addresses>
+		<next-layer-protocol>TCP</next-layer-protocol>
+		<local-ports>
+			<start>0</start>
+			<end>0</end>
+		</local-ports>
+		<remote-ports>
+			<start>0</start>
+			<end>0</end>
+		</remote-ports>
+		<security-protocol>esp</security-protocol>
+		<esp-sa>
+			<encryption>
+				<encryption-algorithm>3des</encryption-algorithm>
+				<key>ENC_KEY</key>
+				<iv>VECTOR</iv>
+			</encryption>
+			<integrity>
+				<integrity-algorithm>hmac-md5-128</integrity-algorithm>
+				<key>INT_KEY</key>
+			</integrity>
+		</esp-sa>
+		<mode>TRANSPORT</mode>
+		 <sad-lifetime-soft>
+			<bytes>20000000</bytes>
+			<packets>20000</packets>
+			<added>25</added>
+			<used>222</used>
+		</sad-lifetime-soft>
+		<sad-lifetime-hard>
+			<bytes>40000000</bytes>
+			<packets>40000</packets>
+			<added>120</added>
+			<used>444</used>
+		</sad-lifetime-hard>
+	</sad-entry>
+</sad>
+</ipsec>
+</ietf-ipsec>
+</config>

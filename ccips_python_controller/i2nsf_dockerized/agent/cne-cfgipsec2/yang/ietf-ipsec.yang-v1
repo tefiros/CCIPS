@@ -1,0 +1,958 @@
+module ietf-ipsec {
+
+	namespace "http://example.net/ietf-ipsec";
+
+  prefix "eipsec";
+
+	import ietf-inet-types { prefix inet; }
+  import ietf-yang-types { prefix yang; }
+  	
+	import ietf-netconf-acm {
+  	prefix nacm;
+  }
+
+  description "Data model for IPSec";
+
+  revision 2018-04-16 {
+    description
+      "Initial revision.";
+  }
+
+  feature case1 { description "Feature case1: IKE SPD PAD"; }
+  feature case2 { description "Feature case2: SPD SAD"; }
+
+
+ 	typedef encryption-algorithm-t {
+ 		description "Encryption algorithms --> RFC_5996";
+ 		type enumeration {
+   		enum reserved-0;
+   		enum des-iv4;
+      enum des;
+   		enum 3des;
+   		enum rc5;
+   		enum idea;
+   		enum cast;
+   		enum blowfish;
+   		enum 3idea;
+   		enum des-iv32;
+   		enum reserved-10;
+   		enum null;
+   		enum aes-cbc;
+   		enum aes-ctr;
+   		enum aes-ccm-8;
+   		enum aes-ccm-12;
+   		enum aes-ccm-16;
+   		enum reserved-17;
+   		enum aes-gcm-8-icv;
+   		enum aes-gcm-12-icv;
+   		enum aes-gcm-16-icv;
+   		enum null-auth-aes-gmac;
+  		enum ieee-p1619-xts-aes {
+     			description
+       			"encr-ieee-p1619-xts-aes --> Reserved for IEEE P1619 XTS-AES.";
+   		}
+   		enum camellia-cbc;
+   		enum camellia-ctr;
+   		enum camellia-ccm-8-icv;
+   		enum camellia-ccm-12-icv;
+   		enum camellia-ccm-16-icv;
+   		enum aes-cbc-128;
+   		enum aes-cbc-192;
+   		enum aes-cbc-256;
+   		enum blowfish-128;
+   		enum blowfish-192;
+   		enum blowfish-256;
+   		enum blowfish-448;
+   		enum camellia-128;
+   		enum camellia-192;
+   		enum camellia-256;
+ 		}
+ 	}
+      
+ 	typedef integrity-algorithm-t {
+ 		description "Integrity Algorithms --> RFC_5996";
+ 		type enumeration {
+   		enum none;
+   		enum hmac-md5-96;
+   		enum hmac-sha1-96;
+   		enum des-mac;
+   		enum kpdk-md5;
+   		enum aes-xcbc-96;
+   		enum hmac-md5-128;
+   		enum hmac-sha1-160;
+   		enum aes-cmac-96;
+   		enum aes-128-gmac;
+   		enum aes-192-gmac;
+   		enum aes-256-gmac;
+   		enum hmac-sha2-256-128;
+   		enum hmac-sha2-384-192;
+   		enum hmac-sha2-512-256;
+   		enum hmac-sha2-256-96;
+ 		}
+ 	}
+
+  // SAD
+  typedef combined-algorithm-t {
+    description "Combined Algorithms --> RFC 7321";
+    type enumeration {
+      enum AES-GCM-16-ICV;
+      enum AES-CCM;
+    }
+  }
+
+  // PAD
+  typedef auth-protocol-type {
+    type enumeration {
+      enum IKEv1 { // not supported by model
+        description "Authentication protocol based on IKEv1";
+      }
+      enum IKEv2 {
+        description "Authentication protocol based on IKEv2";
+      }
+      enum KINK { // not supported by model
+        description "Authentication protocol based on KINK";
+      }
+    }
+    description "Peer authentication protocols";
+  }
+
+  // SPD and SAD -  three last items defined in SAD only
+  typedef ipsec-mode {
+    description "type define of ipsec mode";
+    type enumeration {
+      enum TRANSPORT { description "Transport mode"; }
+      enum TUNNEL { description "Tunnel mode"; }
+      enum BEET { description "Bound End-to-End Tunnel (BEET) mode for ESP.";} /*Supported by XFRM*/
+      enum RO { description "Route Optimization mode for Mobile IPv6";} /*Supported by XFRM*/
+      enum IN_TRIGGER {description "In trigger mode for Mobile IPv6";} /*Supported by XFRM*/
+    }
+  }
+
+  // SPD and SAD
+  typedef ipsec-protocol {
+    description "type define of ipsec security protocol";
+    type enumeration {
+      enum ah { description "AH Protocol"; }
+      enum esp { description "ESP Protocol"; }
+      enum comp { description "IP Compression";} /*Supported by XFRM*/
+      enum route2 { description "Routing Header type 2. Mobile IPv6";} /*Supported by XFRM*/
+      enum hao {description "Home Agent Option";} /*Supported by XFRM*/
+    }  
+  }
+
+  // SAD only
+  typedef ipsec-spi {
+    description "SPI";
+    type uint32 { range "1..max"; }
+  }
+
+  // SAD only
+  typedef lifetime-action {
+    type enumeration {
+      enum terminate {description "Terminate the IPsec SA";}
+      enum replace  {description "Replace the IPsec SA with a new one";}
+    } 
+  }
+
+  // SPD only
+  typedef ipsec-traffic-direction {
+    description "IPsec traffic direction";
+    type enumeration {
+      enum INBOUND { description "Inbound traffic"; }
+      enum OUTBOUND { description "Outbound traffic"; }
+      enum FORWARD{ description "Forwarded traffic"; } /*Rafa: This is in ip xfrm*/
+    }   
+  }
+
+  // SPD only
+  typedef ipsec-spd-operation {
+    description "The operation when traffic matches IPsec security policy";
+    type enumeration {
+      enum PROTECT { description "PROTECT the traffic with IPsec"; }
+      enum BYPASS { description "BYPASS the traffic"; }
+      enum DISCARD { description "DISCARD the traffic"; }
+    }
+  }
+
+  // SPD and SAD -  renamed in both  
+  typedef ipsec-next-layer-proto {
+    description "Next layer proto on top of IP";  
+    type enumeration {
+      enum TCP { description "PROTECT the traffic with IPsec"; }
+      enum UDP { description "BYPASS the traffic"; }
+      enum SCTP { description "PROTECT the traffic with IPsec";} 
+      enum DCCP { description "PROTECT the traffic with IPsec";}
+      enum ICMP { description "PROTECT the traffic with IPsec";}
+      enum IPv6-ICMP { description "PROTECT the traffic with IPsec";}
+      enum MH {description "PROTECT the traffic with IPsec";}
+      enum GRE {description "PROTECT the traffic with IPsec";}
+    }
+  }
+
+  // SPD only
+  typedef ipsec-spd-name {
+    description "IPsec SPD name type";
+    type enumeration {
+      enum id_rfc_822_addr {
+        description "Fully qualified user name string.";
+      }    
+      enum id_fqdn {
+        description "Fully qualified DNS name.";
+      }         
+      enum id_der_asn1_dn {
+        description "X.500 distinguished name.";
+      }       
+      enum id_key {
+        description "IKEv2 Key ID.";
+      }
+    }    
+  }
+
+
+	// Gabi: for IKE and PAD
+	typedef auth-method-type {
+      	/* Gabi: Most implementations also provide XAUTH protocol, others used are: BLISS, P12, NTLM, PIN */
+
+		type enumeration {
+   		enum pre-shared {
+  			description "Select pre-shared key message as the authentication method";
+   		}
+   		enum rsa-signature {
+  			description "Select rsa digital signature as the authentication method";
+  		}
+ 		 enum dss-signature {
+		  	description "Select dss digital signature as the authentication method";
+		  }
+ 		 enum eap { 
+		  	description "Select EAP as the authentication method";
+ 	  	} 
+  	}
+		description "Peer authentication method";
+ 	}
+
+/*################## PAD grouping ####################*/
+
+  grouping auth-method-grouping {
+    description "Peer authentication method data";
+
+    container auth-method {
+      description "Peer authentication method container";
+         
+      leaf auth-m { 
+        type auth-method-type;
+        description "Type of authentication method (preshared, rsa, etc.)";
+      }
+     
+      container pre-shared {
+        //when "../auth-m = pre-shared";
+        leaf secret { type string; }
+        description "Shared secret value";
+      }
+         
+      container rsa-signature {
+        //when "../auth-m = rsa-signature";
+        leaf key-data {
+          type string;
+          //mandatory true;
+          description "RSA private key data - PEM";
+        } 
+
+        leaf key-file {  // Gabi: for a first version we can ommit files
+          type string;
+          description "RSA private key file name ";
+        } 
+
+        leaf-list ca-data {
+          type string;
+          description "List of trusted CA certs - PEM";
+        }
+        leaf ca-file {
+          type string;
+          description "List of trusted CA certs file";
+        } 
+        leaf cert-data {
+          type string;
+          //mandatory true;
+          description "X.509 certificate data - PEM4";
+        } 
+        leaf cert-file {
+          type string; 
+          description "X.509 certificate file";
+        } 
+        leaf crl-data {
+          type string;
+          description "X.509 CRL certificate data in base64";
+        } 
+        leaf crl-file {
+          type string;
+          description " X.509 CRL certificate file";
+        } 
+      }  
+      /*  
+      container dss-signature {  // not yet supported by model
+        //when "../auth-m = dss-signature";            
+      }  
+      container eap { // not yet supporte by model
+        //when "../auth-m = eap";
+      } 
+      */        
+    }
+  }
+
+  grouping identity-grouping {
+    description "Identification type. It is an union identity";
+    choice identity {
+      description "Choice of identity.";
+
+      leaf ipv4-address {
+        type inet:ipv4-address;
+        description "Specifies the identity as a single four (4) octet IPv4 address. An example is, 10.10.10.10. ";
+      }      
+      leaf ipv6-address {
+        type inet:ipv6-address;
+        description "Specifies the identity as a single sixteen (16) octet IPv6 address. An example is FF01::101, 2001:DB8:0:0:8:800:200C:417A .";
+      }
+      leaf fqdn-string {
+        type inet:domain-name;
+        description "Specifies the identity as a Fully-Qualified Domain Name (FQDN) string. An example is: example.com. The string MUST not contain any terminators (e.g., NULL, CR, etc.)."; 
+      } 
+      leaf rfc822-address-string {
+        type string;
+        description "Specifies the identity as a fully-qualified RFC822 email address string. An example is, jsmith@example.com. The string MUST not contain any terminators (e.g., NULL, CR, etc.).";
+      }
+      leaf dnX509 {
+        type string;
+        description "Specifies the identity as a distinguished name in the X.509 tradition.";
+      }
+      leaf id_key {
+        type string;
+        description "Key id";
+      } /* Gabi: I have copy this grouping from the IKE model and added the id_key element following the RFC4301 list of id types */
+    }
+  } /* grouping identity-grouping */
+
+/*################ end PAD grouping ##################*/
+
+/*################## SAD and SPD grouping ####################*/
+
+  grouping ip-addr-range {
+    leaf start {
+      type inet:ip-address;
+      description "Start IP address";
+    }
+    leaf end {
+      type inet:ip-address;
+      description "End IP address";
+    }
+  }
+  
+  grouping port-range  {
+    leaf start {
+      type inet:port-number;
+      description "Start IP address";
+    }
+    leaf end {
+      type inet:port-number;
+      description "End IP address";
+    }
+  }
+
+  grouping tunnel-grouping {
+    leaf local{ type inet:ip-address; description "Local tunnel endpoint"; }
+    leaf remote{ type inet:ip-address; description "Remote tunnel enpoint"; }
+    leaf bypass-df { type boolean; }
+    leaf bypass-dscp { type boolean; }
+    leaf dscp-mapping { type yang:hex-string; }
+    leaf ecn { type boolean; } /*Rafa: It appears in RFC 4301 ASN1 notation. Annex C*/
+  }
+
+  grouping selector-grouping {
+         
+    list local-addresses {
+      key "start end";
+      uses ip-addr-range;
+    }  
+    list remote-addresses {
+      key "start end";
+      uses ip-addr-range;
+    }
+    leaf-list next-layer-protocol { type ipsec-next-layer-proto; }    
+    list local-ports {
+      key "start end";
+      uses port-range;
+    }
+
+    list remote-ports {
+      key "start end";
+      uses port-range;
+    }
+  }
+
+/*################## SAD grouping ####################*/
+
+  grouping ipsec-sa-grouping {
+    description "Configure Security Association (SA). Section 4.4.2.1 in RFC 4301";
+
+    leaf spi { type ipsec-spi;  description "Security Parameter Index";}
+    leaf seq-number { type uint64; description "Current sequence number of IPsec packet."; }
+    leaf seq-number-overflow-flag { type boolean; description "The flag indicating whether overflow of the sequence number counter should prevent transmission of additional packets on the SA, or whether rollover is permitted."; }
+    leaf anti-replay-window { type uint16 { range "0 | 32..1024"; } }
+    leaf rule-number {type uint32; description "This value links the SA with the SPD entry";}
+         
+    // used by SPD and SAD 
+    uses selector-grouping;
+
+    leaf security-protocol { type ipsec-protocol; description "Security protocol of IPsec SA: Either AH or ESP."; }
+    
+    container ah-sa {
+      /* when "../security-protocol = ah"; */
+      description "Configure Authentication Header (AH) for SA";
+      leaf integrity-algorithm { type integrity-algorithm-t; description "Configure Authentication Header (AH)."; }
+      leaf key { type string; }
+    }
+
+    container esp-sa {
+      /* when "../security-protocol = esp"; */
+      description "Set IPSec Encapsulation Security Payloer (ESP)";
+      
+      container encryption {
+        description "Configure encryption for IPSec Encapsulation Secutiry Payload (ESP)";
+        leaf encryption-algorithm { type encryption-algorithm-t; description "Configure ESP encryption"; }
+        leaf key { type string; }
+        leaf iv {type string; }
+      }
+
+      container integrity {
+        description "Configure authentication for IPSec Encapsulation Secutiry Payload (ESP)";
+        leaf integrity-algorithm { type integrity-algorithm-t; description "Configure Authentication Header (AH)."; }
+        leaf key { type string; }
+      }
+
+      container combined {
+        description "ESP combined mode algorithms (encryption and integrity)";
+        leaf combined-algorithm { type combined-algorithm-t; description "Combined algorithm AEAD";}
+      }
+    }
+
+    //uses ah-sa;
+    //uses esp-sa;
+
+    /* We need to check when there is a certificate x509 and 
+      the validity commented in RFC 4301 */
+
+    container sa-lifetime { 
+      description "This may be expressed as a time or byte count, or a simultaneous use of both with the first lifetime to expire taking precedence";
+      leaf time-soft { type uint32; default 0; }
+      leaf time-hard { type uint32; default 0; }
+      leaf time-use-soft { type uint32; default 0; }
+      leaf time-use-hard { type uint32; default 0; }
+      leaf byte-soft { type uint32; default 0; }
+      leaf byte-hard { type uint32; default 0; }
+      leaf packet-soft {type uint32; default 0; }
+      leaf packet-hard { type uint32; default 0; }
+      leaf action {type lifetime-action;}
+    }
+
+    leaf mode { type ipsec-mode; description "SA Mode"; }
+    leaf statefulfragCheck { type boolean; description "TRUE stateful fragment checking, FALSE no stateful fragment checking"; }
+    leaf dscp { type yang:hex-string; }
+
+    // repeated in SPD
+    container tunnel {
+      /* when "../mode = TUNNEL"; */
+      uses tunnel-grouping;
+    }
+
+    leaf path-mtu { type uint16; description "Maximum size of an IPsec packet that can be transmitted without fragmentation"; }
+
+    container encap { /* This is defined by XFRM */
+      leaf espinudp {type boolean; description "TRUE espinudp; FALSE espindup-nonike";}
+      leaf sport {type inet:port-number; }
+      leaf dport {type inet:port-number; }
+      leaf oddr {type inet:ip-address;}
+    }
+
+    //leaf lookup-mode {} *Based on SPI only, SPI and remote address or SPI, remote and local address. This is in RFC 4301*/ [Gabi: described RFC (4.1) but not supported neither by setkey nor xfrm]
+    //leaf ip-comp { type empty; }
+    //leaf nat-traversal-flag { type boolean; description "Whether the SA is used to protect traffic that needs nat traversal"; }
+       
+    /* Gabi: padding options for ESP defined by setkey, zero-pad, random-pad, seq-pad */     
+    /* Gabi: mark and mask values for SA? */
+    /* Rafa: Mark is something that I do not completely understand and I would like to test it. Mark basically "mark" a packet with a number. It is related with iptables and to relate them. It may related with a Yoav Nir's comment in the mailing list about two types of configuration. Need to investigate more. */ 
+  }    
+
+/*################## end SAD grouping ##################*/
+  
+
+
+/*################## SPD grouping ####################*/
+
+  grouping ipsec-policy-grouping {
+    description "Holds configuration information for an IPSec SPD entry.";
+  
+    leaf rule-number {
+      type uint64;
+      description "SPD index. RFC4301 does not mention an index however real implementations provide a policy index/or id to refer a policy. ";
+    }   
+    leaf priority {type uint32; default 0;}
+    list names {
+      key "name";
+      leaf name-type {
+        type ipsec-spd-name;
+        description "SPD name type.";
+      }   
+      leaf name {
+        type string;  
+      }
+    }
+          
+    //leaf reqid {type uint32; description "To relate SPD entries with SAD entries";}
+        
+    container condition {
+      description "SPD condition --> RFC4301";
+      
+      list traffic-selector-list {
+        //key "direction local-addresses remote-address next-layer-protocol local-port remote-port";    
+    
+        key "ts-number";
+        
+        leaf ts-number { type uint32; description "Traffic selector number"; }
+        leaf direction { type ipsec-traffic-direction; description "in/fwd/out"; } 
+            
+        // used by SPD and SAD
+        uses selector-grouping;
+        leaf selector-priority {type uint32; default 0; description "It establishes a priority to the traffic selector";}
+        ordered-by user; 
+      } 
+    }
+
+    container processing-info {
+      description "SPD processing --> RFC4301";
+      leaf action{ type ipsec-spd-operation; mandatory true; description "If the action is bypass or discard processing container ipsec-sa-cfg is empty";} 
+  
+      container ipsec-sa-cfg {
+        //when "../action = PROTECT";
+        
+        leaf pfp-flag { type boolean; description "Each selector has with a pfp flag."; }   
+        leaf extSeqNum { type boolean; description "TRUE 64 bit counter, FALSE 32 bit"; }
+        leaf seqOverflow { type boolean; description "TRUE rekey, FALSE terminare & audit"; } 
+        leaf statefulfragCheck { type boolean; description "TRUE stateful fragment checking, FALSE no stateful fragment checking"; }
+        leaf security-protocol { type ipsec-protocol; description "Security protocol of IPsec SA: Either AH or ESP."; }
+        leaf mode { type ipsec-mode; description "transport/tunnel"; }
+        
+        container ah-algorithms {
+          //when "../security-protocol = ah"; 
+          leaf-list ah-algorithm {
+            type integrity-algorithm-t; 
+            description "Configure Authentication Header (AH)."; 
+          }
+        }
+        
+        container esp-algorithms {
+          //when "../security-protocol = esp"; 
+          description "Configure Encapsulating Security Payload (ESP).";
+          leaf-list authentication { type integrity-algorithm-t; description "Configure ESP authentication"; }
+          leaf-list encryption { type encryption-algorithm-t; description "Configure ESP encryption"; }
+        }
+               
+        // repeated in SAD grouping
+        container tunnel {
+          //when "../mode = TUNNEL";
+          uses tunnel-grouping;
+        }
+      }
+    }
+    
+    // repited in SAD grouping
+    container spd-lifetime { 
+      leaf time-soft { type uint32; default 0; }
+      leaf time-hard { type uint32; default 0; }
+      leaf time-use-soft { type uint32; default 0; }
+      leaf time-use-hard { type uint32; default 0; }
+      leaf byte-soft { type uint32; default 0; }
+      leaf byte-hard { type uint32; default 0; }
+      leaf packet-soft {type uint32; default 0; }
+      leaf packet-hard { type uint32; default 0; }
+    }        
+  }/* grouping ipsec-policy-grouping */
+
+/*################ end SPD grouping ##################*/
+
+
+
+/*################## IKEv2-grouping ##################*/
+
+
+	grouping isakmp-proposal {
+		leaf phase1-lifetime {
+			type uint32;
+			mandatory true;
+			description "lifetime for IKE Phase 1 SAs";
+		}
+		leaf phase1-authby {
+			type auth-method-type;
+			mandatory true;
+			description "Auth method for IKE Phase 1 SAs";
+		}
+		leaf-list phase1-authalg {
+			type integrity-algorithm-t;
+			//mandatory true; Gabi: leaf-list does not support mandatory
+			description "Auth algorigthm for IKE Phase 1 SAs";
+		}
+		leaf-list phase1-encalg {
+			type encryption-algorithm-t;
+			//mandatory true; Gabi: leaf-list does not support mandatory
+			description "Auth algorigthm for IKE Phase 1 SAs";
+		}
+		leaf dh_group {
+			type uint32;
+			mandatory true;
+			description "Group number for Diffie Hellman Exponentiation";
+		}
+	} /* list isakmp-proposal */
+
+
+	grouping phase2-info {
+		leaf local-addrs {
+			type inet:ip-address;
+			mandatory true;
+			/* tran-ipsecme low-remote-address */
+		}
+		leaf remote-addr {
+			type inet:ip-address;
+			mandatory true;
+		/* tran-ipsecme high-remote-address */
+		}
+		leaf pfs_group {
+			type uint32;
+			description
+			"If non-zero, require perfect forward secrecy
+			when requesting new SA. The non-zero value is
+			the required group number";
+		}
+		leaf phase2-lifetime {
+			type uint32;
+			mandatory true;
+			description "lifetime for IKE Phase 2 SAs";
+		}
+		leaf-list phase2-authalg {
+			type integrity-algorithm-t;
+			//mandatory true;
+			description "Auth algorigthm for IKE Phase 2 SAs";
+		}
+		leaf-list phase2-encalg {
+			type encryption-algorithm-t;
+			//mandatory true;
+			description "Auth algorithm for IKE Phase 2 SAs";
+		}
+	}
+
+	grouping local-grouping {
+		description "Configure the local peer in an IKE connection";
+    		
+		container local {
+  		choice my-identifier-type {
+  			default ipv4;
+  			case ipv4 {
+  				leaf ipv4 {
+  					type inet:ipv4-address;
+  					description "IPv4 dotted-decimal address";
+  				}
+  			}
+  			case ipv6 {
+  				leaf ipv6 {
+  					type inet:ipv6-address;
+  					description "numerical IPv6 address";
+  				}
+  			}
+  			case fqdn {
+  				leaf fqdn {
+  					type inet:domain-name;
+  					description "Fully Qualifed Domain name ";
+  				}
+  			}
+  			case dn {
+  				leaf dn {
+  					type string;
+  					description "Domain name";
+  				}
+  			}
+  			case user_fqdn {
+  				leaf user_fqdn {
+  					type string;
+  					description "User FQDN";
+  				}
+  			}
+        description "Local ID type"; 
+  		}
+			leaf my-identifier { //Gabi: Is this required?
+        type string;
+        mandatory true;
+        description "Local id used for authentication";
+      }
+  	}
+	}
+
+	grouping remote-grouping {
+  	description "Configure the remote peer in an IKE connection";
+  	container remote {
+  		choice my-identifier-type {
+  			default ipv4;
+  			case ipv4 {
+  				leaf ipv4 {
+  					type inet:ipv4-address;
+  					description "IPv4 dotted-decimal address";
+  				}
+  			}
+  			case ipv6 {
+  				leaf ipv6 {
+  					type inet:ipv6-address;
+  					description "numerical IPv6 address";
+  				}
+  			}
+  			case fqdn {
+  				leaf fqdn {
+  					type inet:domain-name;
+  					description "Fully Qualifed Domain name ";
+  				}
+  			}
+  			case dn {
+  				leaf dn {
+  					type string;
+  					description "Domain name";
+  				}
+  			}
+  			case user_fqdn {
+  				leaf user_fqdn {
+  					type string;
+  					description "User FQDN";
+  				}
+  			}
+  			description "Local ID type";
+  		}
+  		leaf my-identifier {
+    		type string; 
+  			mandatory true; 
+  			description "Local id used for authentication";
+  		}
+		}
+	}
+
+/*################## Fin--IKEv2-groupingUMU ##################*/
+
+/*################# Register grouping #################*/
+
+  typedef sadb-msg-type {
+    description "PF_KEY base message types";
+    type enumeration {
+      enum sadb_reserved;
+      enum sadb_getspi;
+      enum sadb_update;
+      enum sadb_add;
+      enum sadb_delete;
+      enum sadb_get;
+      enum sadb_acquire;
+      enum sadb_register;
+      enum sadb_expire;
+      enum sadb_flush;
+      enum sadb_dump;
+      enum sadb_x_promisc;
+      enum sadb_x_pchange;
+      enum sadb_max;
+    }
+  }
+
+  typedef sadb-msg-satype {
+    description "PF_KEY Security Association types";
+    type enumeration {
+      enum sadb_satype_unspec;
+      enum sadb_satype_ah;
+      enum sadb_satype_esp;
+      enum sadb_satype_rsvp;
+      enum sadb_satype_ospfv2;
+      enum sadb_satype_ripv2;
+      enum sadb_satype_mip;
+      enum sadb_satype_max;
+    }
+  }
+
+  grouping base-grouping {
+    description "Configuration for the  message header format";
+    list base-list {
+      description "Configuration for a specific message header format";
+      key "version";
+      leaf version { type string; description "Version of PF_KEY (MUST be PF_KEY_V2)"; }
+      leaf msg_type { type sadb-msg-type; description "Identifies the type of message"; }
+      leaf msg_satype { type sadb-msg-satype; description "Defines the type of Security Association"; }
+      leaf msg_seq { type uint32; description "Sequence number of this message."; } 
+    }     
+  }
+
+  grouping algorithm-grouping {
+    description "List of supported authentication and encryptation algorithms";
+    list algorithm-supported{
+    description "List for a specific algorithm";
+      container authentication {
+        description "Authentication algorithm supported";
+        leaf name { type integrity-algorithm-t; description "Name of authentication algorithm"; }
+        leaf ivlen { type uint8; description "Length of the initialization vector to be used for the algorithm"; }
+        leaf min-bits { type uint16; description "The minimun acceptable key length, in bits"; }
+        leaf max-bits { type uint16; description "The maximun acceptable key length, in bits"; }
+      }
+      container encryption {
+        description "Encryptation algorithm supported";
+        leaf name { type encryption-algorithm-t; description "Name of encryption algorithm"; }
+        leaf ivlen { type uint8; description "Length of the initialization vector to be used for the algorithm"; }
+        leaf min-bits { type uint16; description "The minimun acceptable key length, in bits"; }
+        leaf max-bits { type uint16; description "The maximun acceptable key length, in bits"; }
+      }
+    }
+  }
+
+/*################# End Register grouping #################*/
+
+
+/*################## ipsec ##################*/
+
+	container ietf-ipsec {
+         	
+		container ikev2 {
+  		if-feature case1;
+  		description "Configure the IKEv2";
+
+  		container ike-connection { /* tran-ipsecme: ike-peer */
+    		description "IKE connections configuration";
+
+    		list ike-conn-entries { /* tran-ipsecme: ike-peer-entries */
+    			key "conn-name"; 
+    			description "IKE peer connetion information";
+    			leaf conn-name  {  /* tran-ipsecme: peer-name */
+						type string; 
+						mandatory true; 
+						description "Name of IKE connection";
+          }
+    			leaf autostartup {
+    				type boolean;
+    				mandatory true;
+     	 			description "if True: automatically start tunnel at startup; else we do lazy tunnel setup based on trigger from datapath";
+    			}
+    			leaf nat-traversal {
+    				type boolean;
+    				default false;
+    				description "Enable/Disable NAT traversal";
+    			}
+    			leaf version {
+						type enumeration {
+						/* we only support ikev2 in this version */
+							enum ikev2 {value 2;}
+      			}
+      			description "IKE version";
+    			}
+
+    			uses isakmp-proposal;
+    			uses local-grouping; /* tran-ipsecme: local-id */
+    			uses remote-grouping; /* tran-ipsecme: remote-id */
+    			uses phase2-info;
+
+    		} /* ike-conn-entries */
+  		} /* container ike-connection */
+    } /* container ikev2 */
+
+    container ipsec {
+      description "Configuration IPsec";
+      
+      container spd {
+        description "Configure the Security Policy Database (SPD)";
+        list spd-entry {
+          key "rule-number";
+          uses ipsec-policy-grouping;
+          ordered-by user;
+        }
+      }
+
+      container sad {
+        if-feature case2;
+        description "Configure the IPSec Security Association Database (SAD)";
+        list sad-entry {
+          key "spi"; 
+          uses ipsec-sa-grouping;
+        }
+      }
+
+      container pad {
+        if-feature case1;
+        description "Configure Peer Authorization Database (PAD)";
+
+        list pad-entries {
+          key "pad-entry-id";
+          ordered-by user;
+          description "Peer Authorization Database (PAD)";
+
+        /* Gabi: This is some kind of rule number, not mentioned in the RFC but required like list entry key value */
+          leaf pad-entry-id {
+            type uint64;
+            description "SAD index. ";
+          } 
+
+          uses identity-grouping;
+  
+          leaf pad-auth-protocol {
+            type auth-protocol-type;
+            description "IKEv1, IKEv2, KINK, etc. ";
+          } 
+          uses auth-method-grouping;
+        } 
+      } 
+    } 
+
+
+	} /* container ietf-ipsec */ 
+
+
+/*########## State Data ############*/
+
+/*################## RPC and Notifications ##################*/
+
+/*Rafa: What should we do with this? It is not completely specified yet.*/
+  rpc sadb_register {
+    //nacm:default-deny-all;
+    description "Allows netconf to register its key socket as able to acquire new security associations for the kernel";
+    input {
+      uses base-grouping;
+      //leaf version { type string; description "Version of PF_KEY (MUST be PF_KEY_V2)"; }          
+    }
+    output {
+      uses base-grouping; 
+      uses algorithm-grouping;           
+    }
+  }
+
+  notification spd-expire {
+    description "A SPD entry has expired";
+    leaf index {
+      type uint64;
+      description "SPD index. RFC4301 does not mention an index however real implementations (e.g. XFRM or PFKEY_v2 with KAME extensions provide a policy index to refer a policy. ";
+    }
+  }
+
+  notification sadb_acquire {
+    description "A IPsec SA is required ";
+    leaf state {
+      type uint32;
+      mandatory "true";
+      description
+        "The state ....";
+    }
+  }
+
+  notification sadb_expire {
+    description ".....";
+    leaf state {
+      type uint32;
+      mandatory "true";
+      description
+        "The state ....";
+    }
+  }
+
+}  /*module ietf-ipsec*/

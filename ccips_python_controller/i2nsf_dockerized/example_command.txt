@@ -1,0 +1,26 @@
+sudo docker exec -it i2nsf_controller curl -X 'POST' \
+  'http://localhost:5000/i2nsf' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "encAlg": [
+    "des"
+  ],
+  "hardLifetime": 40,
+  "intAlg": [
+    "hmac-sha1-160"
+  ],
+  "nodes": [
+    {
+      "ipControl": "192.168.100.101",
+      "ipData": "10.0.0.101",
+      "networkInternal": "192.168.1.0/24"
+    },
+    {
+      "ipControl": "192.168.100.102",
+      "ipData": "10.0.0.102",
+      "networkInternal": "192.168.2.0/24"
+    }
+  ],
+  "softLifetime": 20
+}'
