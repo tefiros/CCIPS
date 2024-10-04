@@ -86,6 +86,10 @@ type IpsecConfig struct {
 	// Data Addresses
 	dataOrigin string
 	dataEnd    string
+
+	// DMZ
+	dmzOrigin string
+	dmzEnd    string
 	// Crypto data
 	cryptoConfig *CryptoConfig
 	// Lifetime config
@@ -108,10 +112,14 @@ func NewConfigFromSwagger(node1, node2 swagger.Node, softLifetime, hardLifetime 
 	// Set control ips
 	cfg.origin = node1.IpControl
 	cfg.end = node2.IpControl
+
 	if cfg.confType == G2G {
 		// Setup internal networks
 		cfg.prefixOrigin = node1.NetworkInternal
 		cfg.prefixEnd = node2.NetworkInternal
+		// Setup DMZ
+		cfg.dmzOrigin = node1.IpDMZ
+		cfg.dmzEnd = node2.IpDMZ
 	}
 	// Set data ips
 	cfg.dataOrigin = node1.IpData
@@ -165,9 +173,9 @@ func (c *IpsecConfig) CreateSADConfig() (outCfg string, inCfg string, err error)
 	case G2G:
 		{
 			// First set the config for the
-			outCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dataEnd)
-			inCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dataEnd)
-		}
+			outCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd) //antes c.dataOrigin donde DMZ
+			inCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dmzEnd)  //antes c.dataOrigin donde DMZ; dmzEnd antes era dataEnd
+		} //(c, c.prefixEnd, c.prefixOrigin, c.dmzEnd, c.dataOrigin)
 	default:
 		outCfg = formatH2HSADValues(c, c.dataOrigin, c.dataEnd)
 		inCfg = formatH2HSADValues(c, c.dataOrigin, c.dataEnd)
@@ -181,9 +189,9 @@ func (c *IpsecConfig) CreateSPDConfig() (outCfg string, inCfg string, err error)
 	case G2G:
 		{
 			// First set the config for the
-			outCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dataEnd, "outbound")
-			inCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dataEnd, "inbound")
-		}
+			outCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "outbound") // antes c.dataOrigin donde DMZ
+			inCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "inbound")   // antes c.dataOrigin donde DMZ igual que la de arriba los origenes y ends
+		} //(c, c.prefixEnd, c.prefixOrigin, c.dmzEnd, c.dataOrigin, "inbound")
 	default:
 		{
 			outCfg = formatH2HSPDValues(c, c.dataOrigin, c.dataEnd, "outbound")
@@ -249,8 +257,8 @@ func (c *IpsecConfig) ParseConfigToSwagger() *swagger.I2NSFConfigResponse {
 	return &swagger.I2NSFConfigResponse{
 		Id: c.uuid.String(),
 		Nodes: []swagger.Node{
-			{IpControl: c.origin, NetworkInternal: c.prefixOrigin, IpData: c.dataOrigin},
-			{IpControl: c.end, NetworkInternal: c.prefixEnd, IpData: c.dataEnd},
+			{IpControl: c.origin, NetworkInternal: c.prefixOrigin, IpData: c.dataOrigin, IpDMZ: c.dmzOrigin},
+			{IpControl: c.end, NetworkInternal: c.prefixEnd, IpData: c.dataEnd, IpDMZ: c.dmzEnd},
 		},
 		Status:       "Deployed",
 		SoftLifetime: float64(c.softLifetime.time),
