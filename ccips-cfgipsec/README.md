@@ -47,7 +47,6 @@ This directory has all the code that is needed to run the cfgipsec application:
 * `trust_handler.h/trust_handler.c`: Process that runs in the TA that will handle the incoming requests from the RA. For the moment it only support the interaction with the SAD entries. 
     * TODO:
       * Add support for decrypting config values.
-      * Add support for SPD entries.
 ### cmd
 In this directory it is defined the "entry points" of the code that is going to run the ccips.
 * `i2nsf_ra`: Specifies the code to run the RA side of the application `main.c`, and the imports and compilation options needed `CMAKELists.txt
@@ -186,7 +185,5 @@ Installing new entries:
     3.2 This information is used to create a temporary `sad_entry_node` so it can so then it can be sent through the `verify_trusted_sad_entry` method to the TA using a `REQUEST_VERIFY_MSG` type message.
     3.3 As the other casses, this messages are handled by the method `handle_message`, which in this case will parse the information into a `sad_entry_node` so it can be directly compared in the `handle_request_verify_message` method with the one that must be previously installed in the `trusted_init_sad_node` database. 
     3.4 Once the values have been compared, if will report the result back to the RA using a `OP_RESULT_MSG` with a correct answer. Otherwirse it will return an `ALERT_STATE_MSG` reporting that the entries compared where not valid.
-4. After detecting if an entry has been correctly validated or not the event should be registered (TODO).
+4. After detecting if an entry has been correctly validated or not the event should be registered.
 
-
-# TODO: ADD IP references for Mouselab scenario
