@@ -18,7 +18,6 @@ Check this
 # Setting up all the process:
 
 # Controller
-* Check this [guide](https://hackmd.io/EdjPGLw7SaGNLKkUfr4Izg) on how to build the docker image.
 
 In the VM with the controller just run the following command:
 ```bash!
@@ -29,53 +28,6 @@ This will start a process that runs an HTTP server that handles the requests to 
 # Agents
 In this scenario we are deploying one Agent running with the Enarx TA version and another agent running the standalone.
 
-## Enarx Agent
-
-As described in [here](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/Sy_B1mn-a) first it is required to run the Enarx side using in this case the docker container, and then rich application using also the already built container.
-
-```bash!
-# In the cmd/i2nsf_enarx/enarx directory 
-# debian@tests-spirs:~/ipsec_tests/ipsec_interactor/cmd/i2nsf_enarx/enarx$ 
-sudo docker run --rm --name enarx_ccips -v `pwd`/Enarx.toml:/enarx.toml -p 10000:10000  -v `pwd`/target/wasm32-wasi/release/enarx.wasm:/i2nsf_enarx.wasm enarx/enarx:0.6.3 enarx run --wasmcfgfile /enarx.toml /i2nsf_enarx.wasm
-```
-New command:
-```bash!
-sudo docker run --rm --name enarx_ccips -v `pwd`/Enarx.toml:/enarx.toml -p 10000:10000  -v `pwd`/target/wasm32-wasi/release/enarx.wasm:/i2nsf_enarx.wasm enarx_test enarx run --wasmcfgfile /enarx.toml /i2nsf_enarx.wasm
-```
-
-
-Then you can launch the RA on a new terminal (inside the TA)
-```bash!
-sudo docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent_enarx
-```
-
-New command: 
-```bash!
-sudo docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent_enarx_patch2:0.4.0
-
-```
-
-## Steward
-Inside the Steward VM, go inside /steward
-The public key in hexa format is saved enarx_key.txt this is the enarx public key and steward_cert.txt the steward certificate.
-
-```bash!
-cd steward
-cargo run -- --host example.com
-````
-Then launch the enarx to obtain the certificate.
-When the enarx container is launched, the certificate is generated automatically.
-
-### Sending the certificate to the CCIPS controller
-Here is an example, always remember to "cerificate":"..."
-
-```bash!
-curl -X 'POST' '
-http://192.168.165.197:5000/ccips/certificate'
--H 'accept: application/json' -H 'Content-Type: application/json' -d '{"certificate": " tbs_certificate: TbsCertificate { version: V3, serial_number: UIntRef { inner: ByteSlice { length: Length(16), inner: [235, 59, 44, 215, 70, 194, 72, 30, 181, 151, 201, 117, 217, 206, 162, 248] } }, signature: AlgorithmIdentifier { oid: ObjectIdentifier(1.2.840.10045.4.3.2), parameters: None }, issuer: RdnSequence([RelativeDistinguishedName(SetOfVec { inner: [AttributeTypeAndValue { oid: ObjectIdentifier(2.5.4.3), value: AnyRef { tag: Tag(0x0c: UTF8String), value: ByteSlice { length: Length(7), inner: [101, 120, 97, 46, 99, 111, 109] } } }] })]), validity: Validity { not_before: GeneralTime(GeneralizedTime(DateTime { year: 2024, month: 7, day: 18, hour: 10, minutes: 22, seconds: 42, unix_duration: 1721298162s })), not_after: GeneralTime(GeneralizedTime(DateTime { year: 2024, month: 8, day: 15, hour: 10, minutes: 22, seconds: 42, unix_duration: 1723717362s })) }, subject: RdnSequence([]), subject_public_key_info: SubjectPublicKeyInfo { algorithm: AlgorithmIdentifier { oid: ObjectIdentifier(1.2.840.10045.2.1), parameters: Some(AnyRef { tag: Tag(0x06: OBJECT IDENTIFIER), value: ByteSlice { length: Length(8), inner: [42, 134, 72, 206, 61, 3, 1, 7] } }) }, subject_public_key: [4, 145, 94, 231, 237, 0, 103, 21, 38, 108, 104, 108, 233, 156, 27, 73, 158, 5, 101, 199, 150, 170, 35, 178, 124, 33, 73, 19, 202, 132, 128, 124, 145, 88, 142, 182, 207, 201, 104, 6, 19, 192, 184, 109, 143, 176, 94, 73, 66, 229, 151, 22, 22, 25, 103, 143, 129, 29, 128, 110, 156, 171, 250, 249, 169] }, issuer_unique_id: None, subject_unique_id: None, extensions: Some([Extension { extn_id: ObjectIdentifier(1.3.6.1.4.1.58270.1.1), critical: false, extn_value: [] }, Extension { extn_id: ObjectIdentifier(2.5.29.17), critical: false, extn_value: [48, 25, 130, 23, 102, 111, 111, 46, 98, 97, 114, 46, 104, 117, 98, 46, 112, 114, 111, 102, 105, 97, 110, 46, 99, 111, 109] }, Extension { extn_id: ObjectIdentifier(2.5.29.37), critical: false, extn_value: [48, 20, 6, 8, 43, 6, 1, 5, 5, 7, 3, 1, 6, 8, 43, 6, 1, 5, 5, 7, 3, 2] }]) }, signature_algorithm: AlgorithmIdentifier { oid: ObjectIdentifier(1.2.840.10045.4.3.2)", "parameters": "None" }, "signature": "BitStringRef" { "unused_bits": 0, "bit_length": 568, "inner": "ByteSlice" { "length": "Length(71)", "inner": [48, 69, 2, 33, 0, 196, 120, 244, 11, 36, 69, 159, 37, 20, 130, 54, 72, 126, 149, 126, 203, 177, 59, 238, 188, 250, 184, 205, 9, 216, 248, 133, 171, 105, 146, 95, 61, 2, 32, 17, 42, 103, 221, 71, 160, 179, 50, 45, 166, 194, 161, 229, 223, 165, 104, 15, 197, 184, 48, 230, 150, 219, 238, 201, 1, 242, 211, 23, 251, 48, 145] } } "}'
-```
-
-## Standalone Agent
 Here you only need to run the standalone version described in [here](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/Sy_B1mn-a) as follows.
 ```bash!
 docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
