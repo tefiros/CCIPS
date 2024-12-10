@@ -30,6 +30,75 @@ cd pcre2-10.42
 make && make install
 ```
 
+## Libssh
+```bash
+git clone https://gitlab.com/libssh/libssh-mirror.git
+cd libssh-mirror && mkdir build
+cd build 
+cmake ..
+make
+make install
+ldconfig
+```
+## Libyang
+
+```bash
+git clone --single-branch --branch v2.1.30 https://github.com/CESNET/libyang
+cd libyang 
+mkdir build && cd build
+cmake ..
+make install
+ldconfig
+```
+
+## Sysrepo
+
+```bash
+git clone --single-branch --branch v2.2.36 https://github.com/sysrepo/sysrepo
+cd sysrepo && mkdir build && cd build
+cmake ..
+make install
+ldconfig
+```
+
+## Libnetconf2
+
+```bash
+git clone --single-branch --branch v2.1.28 https://github.com/CESNET/libnetconf2.git
+cd libnetconf2
+mkdir build && cd build
+cmake ..
+make -j2 && make install
+ldconfig
+```
+
+## Netopeer2
+
+```bash
+git clone --single-branch --branch v2.1.49 https://github.com/CESNET/Netopeer2.git
+cd Netopeer2
+mkdir build && cd build
+cmake ..
+make -j2 && make install
+```
+
+# Compiling standalone CCIPS
+When running the standalone version of the ccips in the same directory as the ccips repository
+```bash
+mkdir build 
+cd build 
+cmake ..
+make 
+```
+
+# Installing from Docker
+We only need to have the repository downloaded and a functional version of docker
+
+## Standalone
+To build the Docker image simply run in the same repository of the Dockerfile of the CCIPS
+```bash
+sudo docker build -t ccips_agent .
+```
 
 # Deployment 
 
