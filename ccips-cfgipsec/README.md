@@ -7,9 +7,253 @@
 # Installation guide
 Check this 
 # Deployment 
-Check this 
-# CCIPS Controller
-Check this 
+
+# Requirements
+
+* Have a running CCIPS Controller.
+* Have two CCIPS agents.
+* A Mgmnt Network to allow communication between the Controller and the agents.
+* A Data network to so both agents can see each other.
+
+# Setting up all the process:
+
+# Controller
+* Check this [guide](https://hackmd.io/EdjPGLw7SaGNLKkUfr4Izg) on how to build the docker image.
+
+In the VM with the controller just run the following command:
+```bash!
+docker run -it --rm -p 5000:5000 ccips_controller
+```
+This will start a process that runs an HTTP server that handles the requests to deploy the IPsec Tunnel.
+
+# Agents
+In this scenario we are deploying one Agent running with the Enarx TA version and another agent running the standalone.
+
+## Enarx Agent
+
+As described in [here](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/Sy_B1mn-a) first it is required to run the Enarx side using in this case the docker container, and then rich application using also the already built container.
+
+```bash!
+# In the cmd/i2nsf_enarx/enarx directory 
+# debian@tests-spirs:~/ipsec_tests/ipsec_interactor/cmd/i2nsf_enarx/enarx$ 
+sudo docker run --rm --name enarx_ccips -v `pwd`/Enarx.toml:/enarx.toml -p 10000:10000  -v `pwd`/target/wasm32-wasi/release/enarx.wasm:/i2nsf_enarx.wasm enarx/enarx:0.6.3 enarx run --wasmcfgfile /enarx.toml /i2nsf_enarx.wasm
+```
+New command:
+```bash!
+sudo docker run --rm --name enarx_ccips -v `pwd`/Enarx.toml:/enarx.toml -p 10000:10000  -v `pwd`/target/wasm32-wasi/release/enarx.wasm:/i2nsf_enarx.wasm enarx_test enarx run --wasmcfgfile /enarx.toml /i2nsf_enarx.wasm
+```
+
+
+Then you can launch the RA on a new terminal (inside the TA)
+```bash!
+sudo docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent_enarx
+```
+
+New command: 
+```bash!
+sudo docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent_enarx_patch2:0.4.0
+
+```
+
+## Steward
+Inside the Steward VM, go inside /steward
+The public key in hexa format is saved enarx_key.txt this is the enarx public key and steward_cert.txt the steward certificate.
+
+```bash!
+cd steward
+cargo run -- --host example.com
+````
+Then launch the enarx to obtain the certificate.
+When the enarx container is launched, the certificate is generated automatically.
+
+### Sending the certificate to the CCIPS controller
+Here is an example, always remember to "cerificate":"..."
+
+```bash!
+curl -X 'POST' '
+http://192.168.165.197:5000/ccips/certificate'
+-H 'accept: application/json' -H 'Content-Type: application/json' -d '{"certificate": " tbs_certificate: TbsCertificate { version: V3, serial_number: UIntRef { inner: ByteSlice { length: Length(16), inner: [235, 59, 44, 215, 70, 194, 72, 30, 181, 151, 201, 117, 217, 206, 162, 248] } }, signature: AlgorithmIdentifier { oid: ObjectIdentifier(1.2.840.10045.4.3.2), parameters: None }, issuer: RdnSequence([RelativeDistinguishedName(SetOfVec { inner: [AttributeTypeAndValue { oid: ObjectIdentifier(2.5.4.3), value: AnyRef { tag: Tag(0x0c: UTF8String), value: ByteSlice { length: Length(7), inner: [101, 120, 97, 46, 99, 111, 109] } } }] })]), validity: Validity { not_before: GeneralTime(GeneralizedTime(DateTime { year: 2024, month: 7, day: 18, hour: 10, minutes: 22, seconds: 42, unix_duration: 1721298162s })), not_after: GeneralTime(GeneralizedTime(DateTime { year: 2024, month: 8, day: 15, hour: 10, minutes: 22, seconds: 42, unix_duration: 1723717362s })) }, subject: RdnSequence([]), subject_public_key_info: SubjectPublicKeyInfo { algorithm: AlgorithmIdentifier { oid: ObjectIdentifier(1.2.840.10045.2.1), parameters: Some(AnyRef { tag: Tag(0x06: OBJECT IDENTIFIER), value: ByteSlice { length: Length(8), inner: [42, 134, 72, 206, 61, 3, 1, 7] } }) }, subject_public_key: [4, 145, 94, 231, 237, 0, 103, 21, 38, 108, 104, 108, 233, 156, 27, 73, 158, 5, 101, 199, 150, 170, 35, 178, 124, 33, 73, 19, 202, 132, 128, 124, 145, 88, 142, 182, 207, 201, 104, 6, 19, 192, 184, 109, 143, 176, 94, 73, 66, 229, 151, 22, 22, 25, 103, 143, 129, 29, 128, 110, 156, 171, 250, 249, 169] }, issuer_unique_id: None, subject_unique_id: None, extensions: Some([Extension { extn_id: ObjectIdentifier(1.3.6.1.4.1.58270.1.1), critical: false, extn_value: [] }, Extension { extn_id: ObjectIdentifier(2.5.29.17), critical: false, extn_value: [48, 25, 130, 23, 102, 111, 111, 46, 98, 97, 114, 46, 104, 117, 98, 46, 112, 114, 111, 102, 105, 97, 110, 46, 99, 111, 109] }, Extension { extn_id: ObjectIdentifier(2.5.29.37), critical: false, extn_value: [48, 20, 6, 8, 43, 6, 1, 5, 5, 7, 3, 1, 6, 8, 43, 6, 1, 5, 5, 7, 3, 2] }]) }, signature_algorithm: AlgorithmIdentifier { oid: ObjectIdentifier(1.2.840.10045.4.3.2)", "parameters": "None" }, "signature": "BitStringRef" { "unused_bits": 0, "bit_length": 568, "inner": "ByteSlice" { "length": "Length(71)", "inner": [48, 69, 2, 33, 0, 196, 120, 244, 11, 36, 69, 159, 37, 20, 130, 54, 72, 126, 149, 126, 203, 177, 59, 238, 188, 250, 184, 205, 9, 216, 248, 133, 171, 105, 146, 95, 61, 2, 32, 17, 42, 103, 221, 71, 160, 179, 50, 45, 166, 194, 161, 229, 223, 165, 104, 15, 197, 184, 48, 230, 150, 219, 238, 201, 1, 242, 211, 23, 251, 48, 145] } } "}'
+```
+
+## Standalone Agent
+Here you only need to run the standalone version described in [here](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/Sy_B1mn-a) as follows.
+```bash!
+docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
+```
+
+# Deploying the tunnel
+## H2H
+You can check a similar demo in the [SPIRS Repository](https://www.spirs-project.eu/nextcloud/index.php/s/fBXpkbeH9WGKfMF).
+![](https://hackmd.io/_uploads/H1_I7MFz6.png)
+
+## Controller request
+To configure a H2H tunnel (transport mode) so you can enable a encrypted communication between networks 192.168.165.169 and 192.168.165.93 you can request the following to the controller
+```bash!
+curl -X 'POST' \
+  'http://controller_ip:5000/ccips' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "nodes": [
+      {
+        "ipData": "10.0.0.100",
+        "ipControl": "192.168.165.93"
+      },
+    {
+      "ipData": "10.0.0.10",
+      "ipControl": "192.168.165.169"
+    }
+  ],
+  "encAlg": [
+    "3-des-cbc"
+  ],
+  "intAlg": [
+    "sha1"
+  ],
+  "softLifetime": {
+    "nTime": 25
+  },
+  "hardLifetime": {
+    "nTime": 50
+  }
+}'
+```
+
+### How to check the entries:
+* SPD entries:
+```
+ip xfrm policy
+```
+* SAD entries:
+```
+ip xfrm state
+```
+
+### Reset scenario
+
+## Standard reset
+If everything has run succesfuly, you can delete the deployed tunnel following this command:
+```bash
+curl -X 'DELETE' \
+  'http://controller_ip:5000/ccips/{id}'
+```
+
+## Manual reset
+
+### Kill enarx TA container
+```bash
+sudo docker rm -f enarx_ccips
+```
+
+### Kill enarx RA or enarx standalone
+A simply `ctrl+c` should remove the container
+
+### Removing entries from sysrepo
+
+If you are running the ccips without using the cointainer, it could be possible to have some entries stuck in sysrepo. To remove them, under the directory `examples` in the ccips_controller proyect, there is an script called `removeEntries.go` that tries to remove the sysrepo entries associated with the SAD and SPD entries from a set of servers. 
+
+You can change the servers ips at **line 49**
+
+Note that you should first kill the ccips process before trying to remove the entries from sysrepo. 
+
+### Removing SAD and SPD entries from kernel
+
+* SPD entries:
+```
+ip xfrm policy flush
+```
+* SAD entries:
+```
+ip xfrm state flush
+```
+
+
+## G2G
+![](https://hackmd.io/_uploads/rkmumMFM6.png)
+
+### Controller request
+To configure a G2G tunnel (tunnel mode) so you can enable a encrypted communication between networks 192.168.100.0/24 and 192.168.200.0/24 you can request the following to the controller.
+
+```bash!
+ curl -X 'POST' \
+  'http://controller_ip:5000/ccips' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "nodes": [
+    {
+        "ipData": "192.168.165.169",
+        "ipControl": "192.168.165.169",
+        "networkInternal" : "192.168.100.0/24"  
+    },
+    {
+        "ipData": "192.168.165.93",
+        "ipControl": "192.168.165.93",
+        "networkInternal" : "192.168.200.0/24"
+    }
+  ],
+  "encAlg": [
+    "3-des-cbc"
+  ],
+  "intAlg": [
+    "sha1"
+  ],
+  "softLifetime": {
+    "nTime": 15
+  },
+  "hardLifetime": {
+    "nTime": 30
+  }
+}'
+```
+### How to check the entries:
+* SPD entries:
+```
+ip xfrm policy
+```
+* SAD entries:
+```
+ip xfrm state
+```
+
+### Reset scenario
+
+## Standard reset
+If everything has run succesfuly, you can delete the deployed tunnel following this command:
+```bash
+curl -X 'DELETE' \
+  'http://controller_ip:5000/ccips/{id}'
+```
+
+## Manual reset
+
+### Kill enarx TA container
+```bash
+sudo docker rm -f enarx_ccips
+```
+
+### Kill enarx RA or enarx standalone
+A simply `ctrl+c` should remove the container
+
+### Removing entries from sysrepo
+
+If you are running the ccips without using the cointainer, it could be possible to have some entries stuck in sysrepo. To remove them, under the directory `examples` in the ccips_controller proyect, there is an script called `removeEntries.go` that tries to remove the sysrepo entries associated with the SAD and SPD entries from a set of servers. 
+
+You can change the servers ips at **line 49**
+
+Note that you should first kill the ccips process before trying to remove the entries from sysrepo. 
+
+### Removing SAD and SPD entries from kernel
+
+* SPD entries:
+```
+ip xfrm policy flush
+```
+* SAD entries:
+```
+ip xfrm state flush
+```
+
 # Modes of operation
 ![](https://hackmd.io/_uploads/Hk6Mhj9xa.png)
 
