@@ -5,11 +5,11 @@
 * [PF_KEY Key Management API, Version 2 RFC2367](https://datatracker.ietf.org/doc/html/rfc2367)
 
 # Installation guide
-Check this [link](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/Sy_B1mn-a)
+Check this 
 # Deployment 
-Check this [link](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/HkeC51FGa)
+Check this 
 # CCIPS Controller
-Check this [link](https://hackmd.io/EdjPGLw7SaGNLKkUfr4Izg?view)
+Check this 
 # Modes of operation
 ![](https://hackmd.io/_uploads/Hk6Mhj9xa.png)
 
