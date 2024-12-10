@@ -1,1 +1,0 @@
-sudo sysrepocfg --import=del_spd.xml -f xml --datastore running --module ietf-i2nsf-ikeless -v3

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsad_entry.a  CMakeFiles/sad_entry.dir/src/sad_entry/sad_entry.c.o
-/usr/bin/ranlib libsad_entry.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libspd_entry.a  CMakeFiles/spd_entry.dir/src/spd_entry/spd_entry.c.o
-/usr/bin/ranlib libspd_entry.a

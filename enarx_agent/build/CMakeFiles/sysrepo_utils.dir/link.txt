@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsysrepo_utils.a  CMakeFiles/sysrepo_utils.dir/src/sysrepo_utils/sysrepo_utils.c.o CMakeFiles/sysrepo_utils.dir/src/sysrepo_utils/sysrepo_entries.c.o CMakeFiles/sysrepo_utils.dir/src/sysrepo_utils/sysrepo_print.c.o
-/usr/bin/ranlib libsysrepo_utils.a
