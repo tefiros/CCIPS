@@ -16,7 +16,7 @@ Each directory has the corresponding README
 ## Requirements
 
 * Have a running CCIPS Controller. [How launch and build](https://github.com/tefiros/CCIPS/blob/main/ccips_controller/README.md)
-* Have two CCIPS agents.
+* Have two CCIPS agents. [Installation guide](https://github.com/tefiros/CCIPS/tree/main/ccips-cfgipsec#installation-guide)
 * A Mgmnt Network to allow communication between the Controller and the agents.
 * A Data network to so both agents can see each other.
 
