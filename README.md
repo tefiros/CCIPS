@@ -15,7 +15,7 @@ Each directory has the corresponding README
 
 ## Requirements
 
-* Have a running CCIPS Controller. [How to deploy the controller](https://github.com/tefiros/CCIPS/blob/main/ccips_controller/README.md).![]
+* Have a running CCIPS Controller. [How to deploy the controller](https://github.com/tefiros/CCIPS/blob/main/ccips_controller/README.md)
 * Have two CCIPS agents.
 * A Mgmnt Network to allow communication between the Controller and the agents.
 * A Data network to so both agents can see each other.
