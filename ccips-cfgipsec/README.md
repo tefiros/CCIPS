@@ -28,7 +28,7 @@ This will start a process that runs an HTTP server that handles the requests to 
 # Agents
 In this scenario we are deploying one Agent running with the Enarx TA version and another agent running the standalone.
 
-Here you only need to run the standalone version described in [here](https://hackmd.io/@kgkP0v3HTfSsK2QQ5kBTEg/Sy_B1mn-a) as follows.
+Here you only need to run the standalone version as follows.
 ```bash!
 docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
 ```
