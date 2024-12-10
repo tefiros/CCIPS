@@ -1,19 +1,35 @@
 #include <unistd.h>
-#include <signal.h>
-#include "utils.h"
+// #include "utils.h"
+// #include "constants.h"
+// #include "base/log.h"
+// #include "base/pfkeyv2_entry.h"
+#include "sad_entry.h"
+#include "spd_entry.h"
 #include "log.h"
-#include "sysrepo_print.h"
-#include "sysrepo_handler.h"
-#include "sysrepo_entries.h"
-#include "pfkeyv2_entry.h"
-#include "pfkeyv2_utils.h"
-#include "trust_client.h"
-#define VERSION "2"
+#include <unistd.h>
+#include <assert.h>
+#include <stdbool.h>
+#include "parson.h"
+#include "constants.h"
+// #include "base/serializers/sad_serializer.h"
+// #include "base/serializers/spd_serializer.h"
+
+int exit_application = 0;
+
+// sudo gcc -pthread -g -w -I /usr/include/libnl3/ -o test test.c base/* parson/parson.h parson/parson.c
+static void
+sigint_handler(int signum)
+{
+    (void)signum;
+
+    exit_application = 1;
+}
 
 
-int main(int argc, char **argv) {
-    log_set_level(5);
-    INFO("Starting");
+int 
+main(int argc, char **argv) {
+
+    // pf_exec_register(SADB_SATYPE_ESP);    
     unsigned long long int req_id = 100;
 
     char *name = "aaa";
@@ -50,7 +66,7 @@ int main(int argc, char **argv) {
     spd_node->seq_overflow = false;
 
     // IPsec mode, we are running this as a tunnel, we setup protocol_params as ESP
-    spd_node->ipsec_mode = IPSEC_MODE_TRANSPORT;
+    spd_node->ipsec_mode = IPSEC_MODE_TUNNEL;
     // spd_node->protocol_parameters = IPPROTO_ESP;
     spd_node->protocol_parameters = 50;
 
@@ -80,7 +96,7 @@ int main(int argc, char **argv) {
     // To verifify the use of this values
     sad_node->ext_seq_num = false;
     sad_node->seq_overflow = false;
-    sad_node->spi = 12;
+    sad_node->spi = 0;
 	sad_node->seq_number_counter = 0;
 	sad_node->anti_replay_window = 0;
 
@@ -104,7 +120,7 @@ int main(int argc, char **argv) {
     sad_node->protocol_parameters = 50;
     // Algorithms configuration (Some random values)
     sad_node->integrity_alg = SADB_AALG_SHA1HMAC;
-    // example input hex string
+// example input hex string
     const char* hexstr = "af:6a:40:4c";
     // convert the hex string to a byte array
     char bytes[256];
@@ -115,6 +131,11 @@ int main(int argc, char **argv) {
         return 1;
     }
     
+    // print the output byte array
+    for (size_t i=0; bytes[i] != '\0'; i++) {
+        printf("%02x ", bytes[i]);
+    }
+    printf("\n");
 
     char* key = bytes;
     sad_node->encryption_alg = SADB_EALG_3DESCBC;
@@ -144,25 +165,59 @@ int main(int argc, char **argv) {
 	sad_node->lft_idle_hard= 60;
 	sad_node->lft_idle_soft= 10;
 	sad_node->lft_idle_current= 10;
-    // if (!cser_raw_store_struct_spd_entry_node(spd_node,))  
-    if(pf_addpolicy(spd_node) != 0) {
-        ERR("An error has ocurred SPD");
+
+
+    // if (!cser_raw_store_struct_spd_entry_node(spd_node,))
+
+    rc =  pf_addpolicy(spd_node);
+    if (0 != rc) {
+        ERR("ADD SPD entry: %d", rc);
+        return rc;     
     }
-    if(pf_addsad(sad_node) != 0) {
-        ERR("An error has ocurred SAD");
+
+    rc = pf_addsad(sad_node);
+    if (0 != rc) {
+        ERR("ADD SAD in getSAD_entry: %d", rc);
+        return rc;     
     }
-    pf_delsad(sad_node);
     
-    // sad_entry_node *out_node = create_sad_node();
-    // if(pf_getsad(out_node, rec_sad) !=0) {
-    //     ERR("An error has ocurred");
+
+    // rc = pf_delsad(sad_node);
+    // if (0 != rc) {
+    //     ERR("ADD SAD in getSAD_entry: %d", rc);
+    //     return rc;     
     // }
-    // pf_dump_sads(sad_node);
-    // verify_sad_nodes();
-    // del_trusted_sad_entry(rec_sad);
-    // pf_delsad(sad_node);
+    // Check for lifetime
+    
+    // char *result = serialize_sad_node(sad_node);
+    // deserialize_sad_node(result);
+    // INFO(result);
+
+    // pf_getsad(sad_node);
+
+    // int rc = pf_delsad(sad_node);
+    // if (0 != rc) {
+    //     ERR("DEL SAD in getSAD_entry: %d", rc);
+    //     return rc;     
+    // }
+    // // printf("Name: %s, spi %s]\n");
 
 
-    exit(0);
+    // // // Esto setea un listener para escuchar los cambios
+    // // pf_exec_register(SADB_SATYPE_ESP);
+
+    // //     // ------------- ESTO seguro que hay una manera mejor de hacerlo --------------//
+    // signal(SIGINT, sigint_handler);
+    // signal(SIGPIPE, SIG_IGN);
+    // while (!exit_application) {
+    //     sleep(1000);  /* or do some more useful work... */
+    // }
+
+
+
+    INFO("Application exit requested, exiting.");
+    return 0;
 
 }
+
+

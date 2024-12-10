@@ -4,9 +4,14 @@
 #include "utils.h"
 #include "sad_entry.h"
 #include "spd_entry.h"
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 #ifndef __TRUST_HANDLER
 #define __TRUST_HANDLER
 
+
+
+int decrypt_file(char * enc_msg, char * dec_msg, char * priv_key, int len);
 
 /// @brief function that handles a message containing a new configuration (SAD entry)
 /// @param data input message

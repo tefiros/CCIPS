@@ -298,7 +298,7 @@ int add_trusted_spd_entry(spd_entry_node *new_spd, spd_entry_node *old_spd) {
                 goto cleanup;
             }
             //copy_spd_node(new_spd, entry_msg->spd_entry);
-	    memcpy(new_spd,entry_msg->spd_entry,sizeof(spd_entry_node));
+	        memcpy(new_spd,entry_msg->spd_entry,sizeof(spd_entry_node));
             free_spd_node(entry_msg->spd_entry);
             free(entry_msg);
             break;

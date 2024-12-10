@@ -610,7 +610,3 @@ int del_spd_node(spd_entry_node** main_spd_entry, char *spd_name) {
 	}
 	return 0;
 } 
-
-
-
-

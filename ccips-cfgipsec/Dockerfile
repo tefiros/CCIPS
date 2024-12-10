@@ -1,6 +1,5 @@
 FROM sysrepo/sysrepo-netopeer2
 
-ARG ENARX_RA=OFF
 ENV DEBUG_LVL_CCIPS=3
 ENV DEBUG_LVL_NETOPEER=0
 RUN apt update && apt install -y libpthread-stubs0-dev
@@ -20,12 +19,10 @@ sysrepoctl -i yang/ietf-yang-types.yang  --permissions=666 -v3 && \
 sysrepoctl -i yang/ietf-i2nsf-ikec.yang  --permissions=666 -v3 && \
 sysrepoctl -i yang/ietf-i2nsf-ikeless.yang  --permissions=666 -v3
 
-# Enable ike-less case
 RUN sysrepoctl -c ietf-i2nsf-ikeless -e ikeless-notification  -v3
 
 RUN rm -rf parson && git clone https://github.com/kgabis/parson
-RUN rm -rf md5-c && git clone https://github.com/Zunawe/md5-c
-RUN mkdir -p build && cd build && rm -rf * &&  cmake -D ENARX_RA=${ENARX_RA} .. && make
+RUN mkdir -p build && cd build && rm -rf * &&  cmake  .. && make
 
 ADD supervisord.conf /etc/supervisord.conf
 

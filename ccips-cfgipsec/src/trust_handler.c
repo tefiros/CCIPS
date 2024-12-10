@@ -3,17 +3,47 @@
 sad_entry_node *trusted_init_sad_node = NULL;
 spd_entry_node *trusted_init_spd_node = NULL;
 
+/*
+int decrypt_file(char * enc_msg, char * dec_msg, char * priv_key, int len){
+    //Clave guardada en un archivo pem. La leemos y la guardamos en un formato en la que la podamos usar para desencriptar
+    FILE* priv_fp = fopen(priv_key,"r");
+    if(priv_fp==NULL){
+        printf("failed to open priv_key file %s!\n", priv_key);
+        return -1;
+    }
+
+    RSA *rsa2 = PEM_read_RSAPrivateKey(priv_fp, NULL, NULL, NULL);
+    if(rsa2==NULL){
+        printf("unable to read private key!\n");
+        return -1; 
+    }
+
+    //Una vez tenemos la clave pasamos a desencriptar el mensage de enc_msg a dec_msg
+    //len son los bytes que va a desencriptar (hay que ver como extraemos el tamaño del mensage), enc_msg el mensage encriptado, dec_msg donde se va a guardar el mensage desencriptado. Hay que asegurarse de que dec_msg apunta a una posicion en memoria con espacio suficiente para guardar el mensage. El ultimo parametro depende de como se haya encriptado el msg (ver documentacion)
+    //La función devuelve el tamaño del texto desencriptado
+    int dec_len = RSA_private_decrypt(len, enc_msg, dec_msg, rsa2, RSA_PKCS1_PADDING);
+    if(decrylen==-1){
+        printf("failed to decrypt!\n");
+        return -1;
+    }
+    
+    //Si todo ha ido bien return 1
+    return 1;
+}
+*/
+
 extern char *handle_message(char *data) {
 
     default_msg *msg = malloc(sizeof(default_msg));
     int result = 0;
     int code = 0;
+    //Llamar a la funcion decode
     JSON_Value *data_value;;
     JSON_Object *schema = json_object(json_parse_string(data));
     if (schema == NULL) {
         int result = -1;
         int code = -1;
-        data_value = generate_op_message("WRONG JSON",-1);    
+     //   data_+value = generate_op_message("WRONG JSON",-1);    
         goto cleanup;
     }
     // TODO handle error of decode_default

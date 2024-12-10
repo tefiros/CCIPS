@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <signal.h>
+
 #include "utils.h"
 #include "log.h"
 #include "sysrepo_print.h"
@@ -26,6 +27,7 @@
 #include "sysrepo_entries.h"
 #include "pfkeyv2_entry.h"
 #include "pfkeyv2_utils.h"
+
 #define VERSION "2"
 
 int exit_application = 0;
@@ -84,8 +86,7 @@ int main(int argc, char **argv)
     //// connect to sysrepo
     sr_conn_ctx_t *connection = NULL;
     sr_session_ctx_t *session = NULL;
-    sr_subscription_ctx_t *subscription_spd  = NULL; 
-    sr_subscription_ctx_t *subscription_sad  = NULL; 
+    sr_subscription_ctx_t *subscription = NULL; 
 	const char *mod_name, *xpath = NULL;
 
     int rc = SR_ERR_OK;
@@ -110,7 +111,7 @@ int main(int argc, char **argv)
     }
 
     /* read current config */
-    INFO("\n ========== READING RUNNING CONFIG: ==========\n\n");
+    printf("\n ========== READING RUNNING CONFIG: ==========\n\n");
     print_current_config(session, mod_name);
 
 
@@ -118,7 +119,7 @@ int main(int argc, char **argv)
     DBG("Subscribing to entries");
     /*subscribe for changes in running config */
     xpath = "/ietf-i2nsf-ikeless:ipsec-ikeless/spd/spd-entry";
-    rc = sr_module_change_subscribe(session,mod_name, xpath, spd_entry_change_cb, NULL, 1, SR_SUBSCR_DEFAULT, &subscription_spd);
+    rc = sr_module_change_subscribe(session,mod_name, xpath, spd_entry_change_cb, NULL, 2, 0, &subscription);
     if (SR_ERR_OK != rc) {
         ERR( "sr_module_change_subscribe spd: %s", sr_strerror(rc));
         ERR( "Try to reinstall the ietf-ipsec module running make uninstall then make install.");
@@ -127,9 +128,9 @@ int main(int argc, char **argv)
     
 
     xpath = "/ietf-i2nsf-ikeless:ipsec-ikeless/sad/sad-entry";
-    rc = sr_module_change_subscribe(session, mod_name, xpath, sad_entry_change_cb, NULL, 2, SR_SUBSCR_DEFAULT, &subscription_sad);
+    rc = sr_module_change_subscribe(session, mod_name, xpath, sad_entry_change_cb, NULL, 1, 0, &subscription);
     if (SR_ERR_OK != rc) {
-        ERR( "sr_module_change_subscribe sad: %s", sr_strerror(rc));
+        ERR( " sr_module_change_subscribe sad: %s", sr_strerror(rc));
         goto cleanup;
     }
         
@@ -138,7 +139,15 @@ int main(int argc, char **argv)
         ERR( "sadb_register: %s", sr_strerror(rc));
         goto cleanup;
     }
-
+    //
+    // subscribe for state data
+    //
+    xpath = "/ietf-i2nsf-ikeless:ipsec-ikeless/sad/sad-entry"; 
+    rc = sr_oper_get_items_subscribe(session, mod_name, xpath, sad_state_cb, NULL, 0, &subscription); 
+    if (SR_ERR_OK != rc) {
+        ERR( " sr_dp_get_items_subscribe sad-state: %s", sr_strerror(rc));
+        goto cleanup;
+    }
 
     signal(SIGINT, sigint_handler);
     signal(SIGPIPE, SIG_IGN);

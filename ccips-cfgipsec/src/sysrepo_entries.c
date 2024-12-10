@@ -1015,11 +1015,13 @@ int send_delete_SAD_request(unsigned long int spi) {
         ERR("sr_commit: %s", sr_strerror(rc));
         goto cleanup;
     }
+	/*
 	#ifdef Enarx
 		del_sad_node_enarx(sad_node->name);
 	#endif
 	del_sad_node(&init_sad_node,sad_node->name);
 	INFO("Ha salido del error, linea 994 de sysrepo_entries");
+	*/
 	pthread_mutex_unlock(&sad_entries_locker);
 
 	if (NULL != session) {

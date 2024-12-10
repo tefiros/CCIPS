@@ -132,5 +132,3 @@ int add_spd_node(spd_entry_node** main_spd_entry, spd_entry_node* new_spd);
 /// @brief Prints current values of the local database
 /// @param main_spd_entry local spd_entry database
 void show_spd_list(spd_entry_node* main_spd_entry);
-
-

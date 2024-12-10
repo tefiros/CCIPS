@@ -1,0 +1,97 @@
+cmake_minimum_required(VERSION 3.10)
+
+
+set (TARGET "untrusted")
+
+set(CMAKE_C_COMPILER "/home/debian/wasi-sdk-14.0/bin/clang")
+set(CMAKE_CXX_COMPILER "/home/debian/wasi-sdk-14.0/bin/clang")
+
+# set(CMAKE_C_COMPILER "/home/debian/.wasienv/bin/wasicc")
+# set(CMAKE_CXX_COMPILER "/home/debian/.wasienv/bin/wasicc")
+# set(CMAKE_C_FLAGS "-D_WASI_EMULATED_SIGNAL -Wl,wasi-emulated-signal")
+# set(CMAKE_C_FLAGS "--ar=emar")
+
+# set(CMAKE_CXX_FLAGS "-D_WASI_EMULATED_SIGNAL -Wl,wasi-emulated-signal")
+
+
+# set the project name and version
+project(I2NSF_IPSEC VERSION 1.0)
+
+
+# include_directories("/home/debian/wasi-sdk-14.0/lib/clang/13.0.0/include/")
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(SRC_DIRECTORY "${PROJECT_SOURCE_DIR}/src")
+
+
+add_library(log "${SRC_DIRECTORY}/log/log.c")
+add_library(sad_entry "${SRC_DIRECTORY}/sad_entry/sad_entry.c")
+add_library(spd_entry "${SRC_DIRECTORY}/spd_entry/spd_entry.c")
+add_library(utils "${SRC_DIRECTORY}/utils/utils.c")
+add_library(parson "${PROJECT_SOURCE_DIR}/parson/parson.c")
+
+
+# Only include this library for non trusted parts
+if ($TARGET STREQUAL "untrusted")
+    add_library(pfkeyv2_utils "${SRC_DIRECTORY}/pfkeyv2_utils/pfkeyv2_utils.c")
+    add_library(pfkeyv2_entry "${SRC_DIRECTORY}/pfkeyv2_entry/pfkeyv2_entry.c")
+endif()
+
+include_directories("${SRC_DIRECTORY}")
+include_directories("${SRC_DIRECTORY}/log")
+include_directories("${SRC_DIRECTORY}/utils")
+
+
+include_directories("${SRC_DIRECTORY}/sad_entry")
+include_directories("${SRC_DIRECTORY}/spd_entry")
+
+# Only include this library for non trusted parts
+if ($TARGET STREQUAL "untrusted")
+    include_directories("${SRC_DIRECTORY}/pfkeyv2_utils")
+    include_directories("${SRC_DIRECTORY}/pfkeyv2_entry")
+endif()
+
+# add the executable
+add_executable(I2NSF 
+    "${PROJECT_SOURCE_DIR}/test_trusted.c"
+    "${SRC_DIRECTORY}/constants.h"
+)
+
+
+# TODO 3: Use target_link_libraries to link the library to our executable
+target_link_libraries(I2NSF PUBLIC 
+    log
+    sad_entry
+    spd_entry
+    utils
+    parson
+)
+
+ # Only include this for the unstrusted binary
+if ($TARGET STREQUAL "untrusted")   
+    target_link_libraries(I2NSF PUBLIC 
+        pfkeyv2_utils
+        pfkeyv2_entry
+    )
+endif()
+
+# Add Base to I2NSF target_include_directories()
+target_include_directories(I2NSF PUBLIC log "${PROJECT_BINARY_DIR}" "${SRC_DIRECTORY}/log")
+target_include_directories(I2NSF PUBLIC utils "${PROJECT_BINARY_DIR}" "${SRC_DIRECTORY}/utils" )
+
+
+# Only include this for the unstrusted binary
+if ($TARGET STREQUAL "untrusted")
+    target_include_directories(I2NSF PUBLIC pfkeyv2_utils "${PROJECT_BINARY_DIR}" "${SRC_DIRECTORY}/pfkeyv2_utils")
+    target_include_directories(I2NSF PUBLIC pfkeyv2_entry "${PROJECT_BINARY_DIR}" "${SRC_DIRECTORY}/pfkeyv2_entry")
+endif()
+
+target_include_directories(I2NSF PUBLIC sad_entry "${PROJECT_BINARY_DIR}" "${SRC_DIRECTORY}/sad_entry")
+target_include_directories(I2NSF PUBLIC spd_entry "${PROJECT_BINARY_DIR}" "${SRC_DIRECTORY}/spd_entry")                   
+target_include_directories(I2NSF PUBLIC parson "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/parson")
+
+
+# add the binary tree to the search path for include files
+# so that we will find TutorialConfig.h
+target_include_directories(I2NSF PUBLIC
+                            "${PROJECT_BINARY_DIR}"
+                        )
