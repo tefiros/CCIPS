@@ -5,19 +5,44 @@
 * [PF_KEY Key Management API, Version 2 RFC2367](https://datatracker.ietf.org/doc/html/rfc2367)
 
 # Installation guide
-Check this 
+
+When installing the version directly in a Server or VM it is important to install all the necessary dependencies from the Sysrepo framework:
+
+## Some dependencies (debian/ubuntu)
+```bash
+sudo apt update 
+sudo apt install -y curl wget git  build-essential automake autoconf gcc tar make zlib1g-dev libssl-dev clang
+```
+
+## Install Latest CMake Version
+
+Install the latest version of CMake. You can follow the official guide [here](https://cmake.org/install/) if required. The latest repository versions of Ubuntu and Debian typically include a compatible version.
+
+## Build and Install PCRE2
+
+Download, extract, and install PCRE2:
+
+```bash
+wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.bz2
+tar -xvf pcre2-10.42.tar.bz2
+cd pcre2-10.42
+./configure
+make && make install
+```
+
+
 # Deployment 
 
-# Requirements
+## Requirements
 
 * Have a running CCIPS Controller.
 * Have two CCIPS agents.
 * A Mgmnt Network to allow communication between the Controller and the agents.
 * A Data network to so both agents can see each other.
 
-# Setting up all the process:
+## Setting up all the process:
 
-# Controller
+## Controller
 
 In the VM with the controller just run the following command:
 ```bash!
@@ -25,7 +50,7 @@ docker run -it --rm -p 5000:5000 ccips_controller
 ```
 This will start a process that runs an HTTP server that handles the requests to deploy the IPsec Tunnel.
 
-# Agents
+## Agents
 In this scenario we are deploying one Agent running with the Enarx TA version and another agent running the standalone.
 
 Here you only need to run the standalone version as follows.
@@ -33,12 +58,12 @@ Here you only need to run the standalone version as follows.
 docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
 ```
 
-# Deploying the tunnel
-## H2H
+## Deploying the tunnel
+### H2H
 You can check a similar demo in the [SPIRS Repository](https://www.spirs-project.eu/nextcloud/index.php/s/fBXpkbeH9WGKfMF).
 ![](https://hackmd.io/_uploads/H1_I7MFz6.png)
 
-## Controller request
+### Controller request
 To configure a H2H tunnel (transport mode) so you can enable a encrypted communication between networks 192.168.165.169 and 192.168.165.93 you can request the following to the controller
 ```bash!
 curl -X 'POST' \
@@ -90,15 +115,7 @@ curl -X 'DELETE' \
   'http://controller_ip:5000/ccips/{id}'
 ```
 
-## Manual reset
 
-### Kill enarx TA container
-```bash
-sudo docker rm -f enarx_ccips
-```
-
-### Kill enarx RA or enarx standalone
-A simply `ctrl+c` should remove the container
 
 ### Removing entries from sysrepo
 
@@ -177,15 +194,6 @@ curl -X 'DELETE' \
   'http://controller_ip:5000/ccips/{id}'
 ```
 
-## Manual reset
-
-### Kill enarx TA container
-```bash
-sudo docker rm -f enarx_ccips
-```
-
-### Kill enarx RA or enarx standalone
-A simply `ctrl+c` should remove the container
 
 ### Removing entries from sysrepo
 
