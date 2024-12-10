@@ -2,7 +2,7 @@
 
 # CCIPS Controller
 
-The CCIPS controller that can be found in the [Links](#LINKS) section is developed in go using the [`go-netconf-client`](https://github.com/openshift-telco/go-netconf-client) library.
+The CCIPS controller is developed in go using the [`go-netconf-client`](https://github.com/openshift-telco/go-netconf-client) library.
 
 
 ## API Endpoints
