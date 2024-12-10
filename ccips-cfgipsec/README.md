@@ -38,15 +38,12 @@ This directory has all the code that is needed to run the cfgipsec application:
 * `pfkeyv2_utils.h/pfkeyv2_entry.c`: Provides some function to log the messages that are been sent and received to the PFKey Mgmt API.
 * `sad_entry.h/sad_entry.c`: Specifies the internal structure to manage the SAD entries. It also defines some of the methods to generate marshall/unmarshall to a JSON structure.
 
-* `spd_entry.h/spd_entry.c`: Specifies the internal structure to manage the SPD entries.It also defines some of the methods to generate marshall/unmarshall to a JSON structure. TODO:
-    * Add support for SPD entries.
+* `spd_entry.h/spd_entry.c`: Specifies the internal structure to manage the SPD entries.It also defines some of the methods to generate marshall/unmarshall to a JSON structure. 
 * `sysrepo_entries.h/sysrepo_entries.c`: Defines the methods to parse the information from and into SYSREPO. And aslo specifies the method to submit a YANG Notification and to delete a SAD entry when it is requested by the kernel.
 * `sysrepo_handler.h/sysrepo_handler.c`: Defines the methods and process that will be reading from changes of the SYSREPO datastore (only supported ADD/DELETE). Also, specifies the method that will handle some of the events from the PF_KEY management API which later needs to be handled by SYSREPO for deleting or sending.
 * `sysrepo_print.h/sysrepo_print.c`: Defines the methods to print the SPD/SAD values currently stored in the sysrepo datastore, and used to print some specific values.
 * `trust_client.h/trust_client.c`: Defines the method to interact with the TA developed using enarx (trough a TCP socket).
-* `trust_handler.h/trust_handler.c`: Process that runs in the TA that will handle the incoming requests from the RA. For the moment it only support the interaction with the SAD entries. 
-    * TODO:
-      * Add support for decrypting config values.
+* `trust_handler.h/trust_handler.c`: Process that runs in the TA that will handle the incoming requests from the RA. 
 ### cmd
 In this directory it is defined the "entry points" of the code that is going to run the ccips.
 * `i2nsf_ra`: Specifies the code to run the RA side of the application `main.c`, and the imports and compilation options needed `CMAKELists.txt
