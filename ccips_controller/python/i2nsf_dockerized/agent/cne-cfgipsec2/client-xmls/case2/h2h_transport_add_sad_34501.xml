@@ -1,0 +1,42 @@
+<ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<ipsec>
+<sad>
+	<sad-entry>
+		<spi>34501</spi>
+		<seq-number>100</seq-number>
+		<anti-replay-window>0</anti-replay-window>
+		<rule-number>0</rule-number>
+		<local-addresses>
+			<start>192.168.123.100/32</start>
+ 			<end>192.168.123.100/32</end>
+		</local-addresses>
+		<remote-addresses>
+			<start>192.168.123.200/32</start>
+			<end>192.168.123.200/32</end>
+		</remote-addresses>
+		<next-layer-protocol>TCP</next-layer-protocol>
+		<local-ports>
+			<start>0</start>
+			<end>0</end>
+		</local-ports>
+		<remote-ports>
+			<start>0</start>
+			<end>0</end>
+		</remote-ports>
+		<security-protocol>esp</security-protocol>
+		<esp-sa>
+			<encryption>
+				<encryption-algorithm>3des</encryption-algorithm>
+				<key>ecr_secret</key>
+				<iv>vector</iv>
+			</encryption>
+			<integrity>
+				<integrity-algorithm>hmac-md5-128</integrity-algorithm>
+				<key>auth</key>
+			</integrity>
+		</esp-sa>
+		<mode>TRANSPORT</mode>
+	</sad-entry>
+</sad>
+</ipsec>
+</ietf-ipsec>

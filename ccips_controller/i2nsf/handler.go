@@ -69,28 +69,31 @@ func (s *StorageHandler) GetConfig(id uuid.UUID) interface{} {
 	return h.cfg[0].ParseConfigToSwagger()
 }
 
-//Funcion encriptar: https://dev.to/elioenaiferrari/asymmetric-cryptography-with-golang-2ffd
-//msg es el mensage que qeuremos encriptar y key es la dirección de donde se encuentra la clave publica .pem
-/*func (msg []byte, key string) []byte {
-	publicKeyPEM, err := ioutil.ReadFile(key)
+// Funcion encriptar: https://dev.to/elioenaiferrari/asymmetric-cryptography-with-golang-2ffd
+// msg es el mensage que qeuremos encriptar y key es la dirección de donde se encuentra la clave publica .pem
+/*func Encrypt(msg []byte, key string) []byte {
+	publicKeyPEM, err := os.ReadFile(key)
 	if err != nil {
 		panic(err)
 	}
 
-        publicKeyBlock, _ := pem.Decode(publicKeyPEM)
-        publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
-        if err != nil {
+	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
+	if publicKeyBlock == nil {
 		panic(err)
-        }
+	}
 
-	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), plaintext)
-        if err != nil {
+	publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+	if err != nil {
 		panic(err)
-        }
+	}
+
+	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), msg)
+	if err != nil {
+		panic(err)
+	}
 
 	return ciphertext
-}
-*/
+} */
 
 var spiManager = new(SPIManager)
 
@@ -162,6 +165,8 @@ func NewHandler(request *swagger.I2NSFRequest, id uuid.UUID) (*Handler, error) {
 	}
 	cfg1.SetNewSPI()
 	cfg2.SetNewSPI()
+	//h, err:= newHandler(node1, node2, cfg1, cfg2) //añadido para encriptar
+	//return Encrypt(h,swagger.ApiGetCertificate()),err  //añandid para encriptar
 	return newHandler(node1, node2, cfg1, cfg2)
 
 }

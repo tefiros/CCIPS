@@ -1,0 +1,22 @@
+<config
+        xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <ietf-ipsec
+            xmlns="http://example.net/ietf-ipsec"
+            xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <ipsec>
+            <sad>
+                <sad-entry nc:operation="delete">
+                    <spi>SPI_OUT</spi>
+                    <!-- SPIb1=SPI2 in B-->
+                    <seq-number>100</seq-number>
+                    <rule-number>0</rule-number>
+                </sad-entry>
+                <sad-entry nc:operation="delete">
+                    <spi>SPI_IN</spi>
+                    <!-- SPIa1=SPI1 in A-->
+                    <rule-number>0</rule-number>
+                </sad-entry>
+            </sad>
+        </ipsec>
+    </ietf-ipsec>
+</config>

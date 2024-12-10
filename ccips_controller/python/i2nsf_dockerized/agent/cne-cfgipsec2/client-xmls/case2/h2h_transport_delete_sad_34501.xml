@@ -1,0 +1,9 @@
+<ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<ipsec>
+<sad>
+	<sad-entry nc:operation="delete" >
+		<spi>34501</spi>
+	</sad-entry>
+</sad>
+</ipsec>
+</ietf-ipsec>

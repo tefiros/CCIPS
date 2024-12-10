@@ -1,0 +1,30 @@
+<ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+
+<ikev2>
+  <ike-connection>
+    <ike-conn-entries>
+      <conn-name>gateway2</conn-name>
+      <autostartup>ALWAYSON</autostartup>
+      <version>ikev2</version>
+      <phase1-lifetime>100</phase1-lifetime>
+      <dh_group>2048</dh_group>
+      <local>
+        <ipv4>192.168.123.200</ipv4>
+        <my-identifier>Host2</my-identifier>
+      </local>
+      <remote>
+       <ipv4>192.168.123.100</ipv4>
+        <my-identifier>Host1</my-identifier>
+      </remote>
+      <pfs_group>0</pfs_group>
+      <!--<phase2-lifetime>100</phase2-lifetime>
+      <phase2-authalg>hmac-md5-96</phase2-authalg>
+      <phase2-encalg>3des</phase2-encalg>-->
+    </ike-conn-entries>
+  </ike-connection>
+</ikev2>
+
+
+
+
+</ietf-ipsec>

@@ -1,0 +1,12 @@
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <ietf-ipsec xmlns="http://example.net/ietf-ipsec" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <ipsec>
+            <sad>
+                <sad-entry nc:operation="delete">
+                    <spi>SPI_IN</spi>
+                </sad-entry>
+            </sad>
+        </ipsec>
+    </ietf-ipsec>
+</config>
+
