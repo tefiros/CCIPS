@@ -4,7 +4,9 @@
 * [YANG Data Model for IPsec Flow Protection Based on Software-Defined Networking RFC9061](https://datatracker.ietf.org/doc/rfc9061/)
 * [PF_KEY Key Management API, Version 2 RFC2367](https://datatracker.ietf.org/doc/html/rfc2367)
 
-# Installation guide
+Agent can be installed standalaone in a VM or in a docker. Both options are detailed below.
+
+# Installation guide for standalone Server or VM and compilation
 
 When installing the version directly in a Server or VM it is important to install all the necessary dependencies from the Sysrepo framework:
 
@@ -82,7 +84,7 @@ cmake ..
 make -j2 && make install
 ```
 
-# Compiling standalone CCIPS
+## Compiling standalone CCIPS
 When running the standalone version of the ccips in the same directory as the ccips repository
 ```bash
 mkdir build 
@@ -91,7 +93,7 @@ cmake ..
 make 
 ```
 
-# Installing from Docker
+# Installation guide for Docker
 We only need to have the repository downloaded and a functional version of docker
 
 ## Standalone
