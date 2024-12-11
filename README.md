@@ -31,9 +31,9 @@ docker run -it --rm -p 5000:5000 ccips_controller
 This will start a process that runs an HTTP server that handles the requests to deploy the IPsec Tunnel.
 
 ## Agents
-In this scenario we are deploying one Agent running with the Enarx TA version and another agent running the standalone.
+In this scenario we are deploying two Agent running in docker mode.
 
-Here you only need to run the standalone version as follows.
+Here you only need to run as follows in each agent.
 ```bash!
 docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
 ```
