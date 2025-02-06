@@ -1,16 +1,17 @@
 #include "messages.h"
-#include "log.h"
 
 
 
-int decode_default_msg(JSON_Object *schema, default_msg* msg) {
+int get_message(char *data, default_msg* msg) {
+    JSON_Object *schema = json_object(json_parse_string(data));
     msg->work_id = json_object_get_number(schema,"work_id");
     msg->code = json_object_get_number(schema,"code");
     msg->data = json_object_get_object(schema,"data");
+    json_value_free(schema);
     return 0;
 }
 
-char *encode_default_msg(int work_id, int code, JSON_Value *data) {
+char *create_message(int work_id, int code, JSON_Value *data) {
     JSON_Value *root_value = json_value_init_object();
     JSON_Object *root_object = json_value_get_object(root_value);
     json_object_set_number(root_object, "work_id", work_id);
@@ -20,53 +21,61 @@ char *encode_default_msg(int work_id, int code, JSON_Value *data) {
 }
 
 
-int decode_sad_entry_msg(JSON_Object *schema, sad_entry_msg *msg) {
-    msg->sad_entry = deserialize_sad_node(json_object_get_object(schema,"sad_entry"));
+int decode_new_config_msg(JSON_Object *schema, new_config_msg *msg) {
+    int entries_id = json_object_get_number(schema,"entries_id");
+    msg->entries_id = entries_id;
+    // Extract array
+    JSON_Array *entries_array = json_object_get_array(schema,"sad_entries");
+    int n_elements = json_array_get_count(entries_array);
+
+    int i = 0;
+    for (i = 0; i < n_elements; i++) {
+        msg->sad_entries[i] = deserialize_sad_node(json_array_get_object(entries_array,i));
+    }
+    json_value_free(schema);
     return 0;
 }
 
-JSON_Value *encode_sad_entry_msg(sad_entry_msg *msg) {
+JSON_Value *encode_new_config_msg(new_config_msg *msg) {
     JSON_Value *root_value = json_value_init_object();
     JSON_Object *root_object = json_value_get_object(root_value);
-    json_object_set_value(root_object, "sad_entry", serialize_sad_node(msg->sad_entry));
+    json_object_set_number(root_object,"entries_id",msg->entries_id);
+    json_object_set_value(root_object, "sad_entries", json_value_init_array());
+    JSON_Array *entries_array = json_object_get_array(root_object,"sad_entries");
+    int i = 0;
+    for (i = 0; i < 2; i++) {
+        json_array_append_value(entries_array,serialize_sad_node(msg->sad_entries[i]));
+    }
+    json_object_set_value(root_object,"sad_entries",entries_array);
     return root_value;
 }
-
-int decode_spd_entry_msg(JSON_Object *schema, spd_entry_msg *msg) {
-    msg->spd_entry = deserialize_spd_node(json_object_get_object(schema,"spd_entry"));
-    return 0;
-}
-
-JSON_Value *encode_spd_entry_msg(spd_entry_msg *msg) {
-    JSON_Value *root_value = json_value_init_object();
-    JSON_Object *root_object = json_value_get_object(root_value);
-    json_object_set_value(root_object, "spd_entry", serialize_spd_node(msg->spd_entry));
-    return root_value;
-}
-
 
 int decode_delete_config_msg(JSON_Object *schema, delete_config_msg *msg) {
-    strcpy(msg->entry_id,json_object_get_string(schema,"entry_id"));
+    int entries_id = json_object_get_number(schema,"entries_id");
+    msg->entries_id = entries_id;
+    json_value_free(schema);
     return 0;
 }
 
 JSON_Value *encode_delete_config_msg(delete_config_msg *msg) {
     JSON_Value *root_value = json_value_init_object();
     JSON_Object *root_object = json_value_get_object(root_value);
-    json_object_set_string(root_object,"entry_id",msg->entry_id);
+    json_object_set_number(root_object,"entries_id",msg->entries_id);
     return root_value;
 }
 
 int decode_alert_state_msg(JSON_Object *schema, alert_state_msg *msg) {
-    strcpy(msg->entry_id,json_object_get_string(schema,"entry_id"));
+    int entries_id = json_object_get_number(schema,"entries_id");
+    msg->entries_id = entries_id;
     strcpy(msg->message,json_object_get_string(schema,"message"));
+    json_value_free(schema);
     return 0;
 }
 
 JSON_Value *encode_alert_state_msg(alert_state_msg *msg) {
     JSON_Value *root_value = json_value_init_object();
     JSON_Object *root_object = json_value_get_object(root_value);
-    json_object_set_string(root_object,"entry_id",msg->entry_id);
+    json_object_set_number(root_object,"entries_id",msg->entries_id);
     json_object_set_string(root_object,"message",msg->message);
     return root_value;
 }
@@ -75,6 +84,7 @@ JSON_Value *encode_alert_state_msg(alert_state_msg *msg) {
 int decode_op_result_msg(JSON_Object *schema, op_result_msg *msg) {
     msg->success = json_object_get_number(schema,"success");
     strcpy(msg->message,json_object_get_string(schema,"message"));
+    json_value_free(schema);
     return 0;
 }
 
@@ -86,13 +96,15 @@ JSON_Value *encode_op_result_msg(op_result_msg *msg) {
     return root_value;
 }
 
-
-JSON_Value *generate_op_message(char* message, int code) {
-    op_result_msg *out = (op_result_msg*) malloc(sizeof(op_result_msg));
-    strcpy(out->message,message);
-    out->success = code;
-    JSON_Value *out_value = encode_op_result_msg(out);
-    free(out);
-    return out_value;
+int decode_request_entries_msg(JSON_Object *schema, request_entries_msg *msg) {
+    msg->entries_id = json_object_get_number(schema,"entries_id");
+    json_value_free(schema);
+    return 0;
 }
 
+JSON_Value *encode_request_entries_msg(request_entries_msg *msg) {
+    JSON_Value *root_value = json_value_init_object();
+    JSON_Object *root_object = json_value_get_object(root_value);
+    json_object_set_number(root_object,"entries_id",msg->entries_id);
+    return root_value;
+}

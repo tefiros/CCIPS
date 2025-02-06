@@ -1,8 +1,8 @@
+
+
 #define MAX_PATH  200
 #define MAX_IP 40
 #define MAX_KEY 1024
-
-#define MAP_HASH_SIZE 32
 
 #define CASE1_IPSECIKE 1
 #define CASE2_IPSEC 2
@@ -48,7 +48,6 @@
 
 #define AALG_MD5HMAC_KEY_BITS    160
 #define AALG_SHA1HMAC_KEY_BITS   160
-#define AALG_SHA2_256HMAC_KEY_BITS 256
 
 //#define SADB_SATYPE_AH  2
 //#define SADB_SATYPE_ESP 3
@@ -147,10 +146,10 @@
 #define SADB_EALG_DESCBC		2
 #define SADB_EALG_3DESCBC		3 // Hasta 192 
 #define SADB_X_EALG_CASTCBC		6 // key length 128bits
-#define SADB_X_EALG_BLOWFISHCBC	7 // key length 32bits-448
+#define SADB_X_EALG_BLOWFISHCBC		7 // key length 32bits-448
 #define SADB_EALG_NULL			11 
 #define SADB_X_EALG_AESCBC		12 // key length 128/192/256 
-#define SADB_X_EALG_AESCTR		13 // key length 128/192/256 
+#define SADB_X_EALG_AESCTR       13 // key length 128/192/256 
 #define SADB_X_EALG_AES_CCM_ICV8	14 //key length 128/192/256 
 #define SADB_X_EALG_AES_CCM_ICV12	15 //key length 128/192/256 
 #define SADB_X_EALG_AES_CCM_ICV16	16 //key length 128/192/256 

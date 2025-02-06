@@ -41,12 +41,12 @@ static struct {
 int verbose_level = 1;
 
 static const char *level_strings[] = {
-  "FATAL", "ERROR","WARN", "INFO","DEBUG","TRACE"
+  "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
 };
 
 #ifdef LOG_USE_COLOR
 static const char *level_colors[] = {
-  "\x1b[35m","\x1b[31m","\x1b[33m","\x1b[32m","\x1b[36m","\x1b[94m"
+  "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
 };
 #endif
 
@@ -93,7 +93,6 @@ static void unlock(void) {
 
 
 const char* log_level_string(int level) {
-  printf("Level: %d\n",L.level);
   verbose_level =  level;
   return level_strings[level];
 }
@@ -110,7 +109,6 @@ void log_set_lock(log_LockFn fn, void *udata) {
 
 
 void log_set_level(int level) {
-  INFO("Setting log level to %d",level);
   L.level = level;
 }
 
@@ -154,7 +152,8 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
   };
 
   lock();
-  if (!L.quiet && level <= L.level) {
+
+  if (!L.quiet && level >= L.level) {
     init_event(&ev, stderr);
     va_start(ev.ap, fmt);
     stdout_callback(&ev);

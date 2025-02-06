@@ -4,7 +4,9 @@ void print_val(const sr_val_t *value)
     if (NULL == value) {
         return;
     }
+
     DBG("%s ", value->xpath);
+
     switch (value->type) {
     case SR_CONTAINER_T:
     case SR_CONTAINER_PRESENCE_T:
@@ -75,10 +77,10 @@ void print_val(const sr_val_t *value)
     case SR_CONTAINER_PRESENCE_T:
     case SR_LIST_T:
     case SR_LEAF_EMPTY_T:
-        // DBG("\n");
+        DBG("\n");
         break;
     default:
-        // DBG("%s\n", value->dflt ? " [default]" : "");
+        DBG("%s\n", value->dflt ? " [default]" : "");
         break;
     }
 }
@@ -89,12 +91,15 @@ void print_current_config(sr_session_ctx_t *session, const char *module_name)
     size_t count = 0;
     int rc = SR_ERR_OK;
     char *xpath;
+
     asprintf(&xpath, "/%s:*//.", module_name);
+
     rc = sr_get_items(session, xpath, 0, 0, &values, &count);
     free(xpath);
     if (rc != SR_ERR_OK) {
         return;
     }
+
     for (size_t i = 0; i < count; i++){
         print_val(&values[i]);
     }

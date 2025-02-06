@@ -29,25 +29,20 @@
 #include <time.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <stddef.h>
 // #include <signal.h>
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 #include <stdint.h>
-#include <crypt.h>
-
-
 
 // #include "pfkeyv2_utils.h"
 #include "log.h"
 #include "constants.h"
-#include "sad_entry.h"
-#include "spd_entry.h"
 
 
 char * get_ip(char * ip_mask);
 int get_mask(char * ip_mask);
+
 void set_verbose(int setting);
 int v_printf(const char * restrict format, ...);
 const char * get_sadb_msg_type(int type);
@@ -64,71 +59,12 @@ const char * get_auth_alg(int alg);
 const char * get_encrypt_alg(int alg);
 int getAuthAlg(char* alg);
 int getEncryptAlg(char* alg);
-unsigned char* hexstr_to_char(char* hexstr);
+
+unsigned char* hexstr_to_char(const char* hexstr);
 int checkIKE_connection();
+
 void remove_colon(char* out, char* str) ;
-int compare_sad_entries(sad_entry_node *i, sad_entry_node *j);
-char* stringToBytes(char* str, size_t len);
-unsigned char* hexToByte(char* str);
-void hexToUpperCase(char* str);
 
 
-// Mngmt of local sad-entries
-
-/// @brief Get sad_entry from the local database 
-/// @param main_sad_entry local sad_entry database
-/// @param sad_name sad_entry name identifier
-/// @return local sad_enrtry (if NULL it does not exists)
-sad_entry_node *get_sad_node(sad_entry_node** main_sad_entry, char *sad_name);
-/// @brief Returns a sad_entry if the SPI exists in the local_database
-/// @param main_sad_entry local sad_entry database
-/// @param spi SPI of the entry to be found
-/// @return local sad_enrtry (if NULL it does not exists)
-sad_entry_node *get_sad_node_by_spi(sad_entry_node** main_sad_entry, unsigned long int spi);
-/// @brief Deletes a sad_entry (identified by their name) from the local_database
-/// @param main_sad_entry Local sad_entry database
-/// @param sad_name Name of the 
-/// @return 
-int del_sad_node(sad_entry_node** main_sad_entry, char *sad_name);
-/// @brief Add a sad_entry into the local database 
-/// @param main_sad_entry local sad_entry database
-/// @param sad_name new sad_entry
-/// @return 
-int add_sad_node(sad_entry_node** main_sad_entry, sad_entry_node* new_sad);
 
 
-/// @brief Prints current values of the local sad_entry database
-/// @param main_sad_entry local sad_entry database
-void show_sad_list(sad_entry_node* main_sad_entry);
-
-
-// TODO: Do the same thing but with the spd_entries. //COMPROBAR PARAMETROS
-// Mngmt of local spd-entries
-// spd_entry_node *get_spd_node(spd_entry_node* main_spd_entry, char *spd_name);
-// spd_entry_node *get_spd_node_by_spi(spd_entry_node* main_spd_entry, unsigned long int spi);
-// int del_spd_node(spd_entry_node* main_spd_entry, unsigned long int spi);
-// int add_spd_node(spd_entry_node* main_spd_entry, spd_entry_node* new_spd);
-
-/// @brief Get spd_entry from the local database 
-/// @param main_spd_entry local spd_entry database
-/// @param spd_name spd_entry name identifier
-/// @return local spd_entry (if NULL it does not exists)
-/// spd_entry_node *get_spd_node(spd_entry_node** main_spd_entry, char *spd_name);
-/// @brief Returns a spd_entry if the index exists in the local database
-/// @param main_spd_entry local spd_entry database
-/// @param policy_index index of the entry to be found
-/// @return local spd_entry (if NULL it does not exists)
-spd_entry_node *get_spd_node_by_index(spd_entry_node* main_spd_entry, int index);
-/// @brief Deletes a spd_entry (identified by their name) from the local_database
-/// @param main_spd_entry Local spd_entry database
-/// @param spd_name Name of the entry
-/// @return 
-int del_spd_node(spd_entry_node** main_spd_entry, char *spd_name);
-/// @brief Add a spd_entry into the local database 
-/// @param main_spd_entry local spd_entry database
-/// @param new_spd new spd_entry
-/// @return 
-int add_spd_node(spd_entry_node** main_spd_entry, spd_entry_node* new_spd);
-/// @brief Prints current values of the local database
-/// @param main_spd_entry local spd_entry database
-void show_spd_list(spd_entry_node* main_spd_entry);

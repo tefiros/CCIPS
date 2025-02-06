@@ -1,22 +1,37 @@
+/*
+ * Copyright (c) 2018 Gabriel López <gabilm@um.es>, Rafael Marín <rafa@um.es>, Fernando Pereñiguez <fernando.pereniguez@cud.upct.es> 
+ *
+ * This file is part of cfgipsec2.
+ *
+ * cfgipsec2 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * cfgipsec2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #ifndef __SPD_ENTRY
 #define __SPD_ENTRY
-#include <stdbool.h>
+
 #include <stdio.h>
-#include "spd_entry.h"
 #include <stdlib.h>
-#include <string.h>
-#ifdef Trusted
-	#include "parson.h"
-#endif
-#include <crypt.h>
+#include <stdbool.h>
+#include "constants.h"
 
-
-typedef struct spd_entry_node{
+// typedef struct host_t host_t;
+typedef struct spd_entry_node {
 	char *name;
-	unsigned long long int req_id;
+	int index;
 	unsigned short policy_dir;
-	unsigned short index;
-	unsigned long long int anti_replay_window;
+	unsigned int req_id;
 	char *local_subnet;
 	char *remote_subnet;
 	char *tunnel_local;
@@ -30,37 +45,18 @@ typedef struct spd_entry_node{
 	unsigned short protocol_parameters;
 	unsigned int integrity_alg;
 	unsigned int encryption_alg;
-	unsigned int encryption_key_length;
-	char *encryption_key;
-	char *integrity_key;
-	char *encryption_iv;
-	bool pfp_flag; //take off?
+	unsigned long long int anti_replay_window;
+	bool pfp_flag;
 	bool stateful_frag_check;
 	bool bypass_dscp;
 	bool ecn;
 	bool tfc_pad;
 	unsigned short df_bit;
+
 	struct spd_entry_node *next;
+
 } spd_entry_node;
 
 
-/// @brief creates an empty spd_node with all the parameters initialized
-/// @return 
 spd_entry_node* create_spd_node();
-
-
-#ifdef Trusted
-/// @brief serialize a spd_node into a JSON_VALUE
-/// @param spd_node input spd_node to serailize
-/// @return Json value
-JSON_Value *serialize_spd_node(spd_entry_node *spd_node);
-
-/// @brief deserialized a JSON_OBJECT into a spd_node
-/// @param schema json schema that contains a serialized _spd_node
-/// @return spd_entry_node // TODO maybe change this so we pass the spd_entry_node to change
-spd_entry_node *deserialize_spd_node(JSON_Object *schema);
-#endif
-
-
-
 #endif

@@ -1,7 +1,5 @@
 FROM sysrepo/sysrepo-netopeer2
 
-ENV DEBUG_LVL_CCIPS=3
-ENV DEBUG_LVL_NETOPEER=0
 RUN apt update && apt install -y libpthread-stubs0-dev
 
 # Setup netconf user

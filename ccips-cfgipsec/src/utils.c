@@ -19,6 +19,7 @@
 
 #include "utils.h"
 
+
 char * get_ip(char * ip_mask) {
 
 	const char d[2] = "/";
@@ -60,9 +61,9 @@ int getAuthAlg(char* alg) {
 	else if (!strcmp(alg, "hmac-sha1-96") || !strcmp(alg, "hmac-sha1-96") ||
 		     !strcmp(alg, "hmac-sha1-160"))
 		return SADB_AALG_SHA1HMAC;
-	else if (!strcmp(alg, "hmac-sha2-256"))
-		return SADB_X_AALG_SHA2_256HMAC;
-	/*else if (!strcmp(alg, "hmac-sha2-384-192"))
+	/*else if (!strcmp(alg, "hmac-sha2-256-128"))
+		return SADB_X_AALG_SHA2_256;
+	else if (!strcmp(alg, "hmac-sha2-384-192"))
 		return SADB_X_AALG_SHA2_384;
 	else if (!strcmp(alg, "hmac-sha2-512-256"))
 		return SADB_X_AALG_SHA2_512;*/
@@ -125,7 +126,6 @@ get_auth_str(int alg) {
     switch (alg) {
     case SADB_AALG_MD5HMAC:     return "hmac-md5-96";
     case SADB_AALG_SHA1HMAC:    return "hmac-sha1-96";
-	case SADB_X_AALG_SHA2_256HMAC:  	return "hmac-sha2-256";
 /*#ifdef SADB_X_AALG_MD5
     case SADB_X_AALG_MD5:       return "Keyed MD5";
 #endif
@@ -161,7 +161,6 @@ get_auth_alg(int alg) {
 	case SADB_AALG_NONE:		return "None";
 	case SADB_AALG_MD5HMAC:		return "HMAC-MD5";
 	case SADB_AALG_SHA1HMAC:	return "HMAC-SHA-1";
-	case SADB_X_AALG_SHA2_256HMAC:  return "HMAC-SHA2-256";
 #ifdef SADB_X_AALG_MD5
 	case SADB_X_AALG_MD5:		return "Keyed MD5";
 #endif
@@ -172,7 +171,7 @@ get_auth_alg(int alg) {
 	case SADB_X_AALG_NULL:		return "Null";
 #endif
 #ifdef SADB_X_AALG_SHA2_256
-	case SADB_X_AALG_SHA2_256:	return "HMAC-SHA2-256";
+	case SADB_X_AALG_SHA2_256:	return "SHA2-256";
 #endif
 #ifdef SADB_X_AALG_SHA2_384
 	case SADB_X_AALG_SHA2_384:	return "SHA2-384";
@@ -239,7 +238,6 @@ get_sadb_msg_type(int type) {
 	case SADB_UPDATE:	return "Update";
 	case SADB_ADD:		return "Add";
 	case SADB_X_SPDADD: return "SADB_X_SPADD";
-	case SADB_X_SPDGET: return "SADB_X_SPDGET"; //added
 	case SADB_DELETE:	return "Delete";
 	case SADB_GET:		return "Get";
 	case SADB_ACQUIRE:	return "Acquire";
@@ -275,7 +273,7 @@ int Socket(int family, int type, int protocol) {
     int n;
 
     if ( (n = socket(family, type, protocol)) < 0)
-        log_error("socket error");
+        ERR("socket error");
     return(n);
 }
 /* end Socket */
@@ -284,7 +282,7 @@ void
 Write(int fd, void *ptr, size_t nbytes) {
 
     if (write(fd, ptr, nbytes) != nbytes)
-       log_error("write error");
+        ERR("write error");
 }
 
 ssize_t
@@ -293,7 +291,7 @@ Read(int fd, void *ptr, size_t nbytes) {
         ssize_t n;
 
         if ( (n = read(fd, ptr, nbytes)) == -1)
-                log_error("read error");
+                ERR("read error");
         return(n);
 }
 
@@ -329,19 +327,26 @@ void remove_all_chars(char* str, char c) {
 }
 
 // function to convert a hex string to a byte array
-unsigned char* hexstr_to_char(char* hexstr)
+unsigned char* hexstr_to_char(const char* hexstr)
 {
-	remove_all_chars(hexstr,':');
-	size_t len = strlen(hexstr);
+	// make a copy of the input string
+    char* hexstr_copy = strdup(hexstr);
+    if (hexstr_copy == NULL) {
+        return NULL;
+    }
+
+	remove_all_chars(hexstr_copy, ':');
+	size_t len = strlen(hexstr_copy);
     if (len % 2 != 0)
         return NULL;
     size_t final_len = len / 2;
     unsigned char* chrs = (unsigned char*)malloc((final_len+1) * sizeof(*chrs));
     for (size_t i=0, j=0; j<final_len; i+=2, j++)
-        chrs[j] = (hexstr[i] % 32 + 9) % 25 * 16 + (hexstr[i+1] % 32 + 9) % 25;
+        chrs[j] = (hexstr_copy[i] % 32 + 9) % 25 * 16 + (hexstr_copy[i+1] % 32 + 9) % 25;
     chrs[final_len] = '\0';
     return chrs;
 }
+
 
 void remove_colon(char* out, char* str) {
     int len = strlen(str);
@@ -353,260 +358,47 @@ void remove_colon(char* out, char* str) {
     }
     out[j] = '\0'; // add the null terminator at the end of the output string
 }
+// int checkIKE_connection() {
 
-char* stringToBytes(char* str, size_t len) {
+// 	vici_conn_t *conn;
+//     int rc = SR_ERR_OK;
+
+//     vici_init();
+//     conn = vici_connect(NULL);
+//     if (conn){
+//             INFO(" Connected to vici ");
+// 	} else {
+//             ERR("Connecting failed: %s", strerror(errno));
+//             return SR_ERR_OPERATION_FAILED;
+//     }
     
-    // Allocate memory for the byte string
-    char* bytes = (char*)malloc(len * 2 + 1);  // Each byte is represented by 2 characters in hexadecimal, +1 for null terminator
-    
-    // Convert each character to byte string
-    for (size_t i = 0; i < len; i++) {
-        sprintf(bytes + i * 2, "%02X", (unsigned char)str[i]);  // Convert byte value to hexadecimal string
-    }
-    
-    return bytes;
-}
+//     vici_deinit();
+//     return SR_ERR_OK;
+// }
 
-static unsigned char charToHex(char c) {
-	if(c >= '0' && c <= '9'){
-		return c - '0';
-	} else if(c >= 'a' && c <= 'f') {
-		return (c - 'a') + 10;
-	} else if(c >= 'A' && c <= 'F') {
-		return (c - 'A') + 10;
-	}
-	return 0;
-}
+int found_name(char *path) {
 
-unsigned char* hexToByte(char* str) {
-    // Calculate the length of the input string
-    size_t len = strlen(str);
-
-    // Allocate memory for the byte string
-    unsigned char* bytes = (unsigned char*)malloc((len/2)+1);  // Each byte is represented by 2 characters in hexadecimal, +1 for null terminator
-
-    // Convert each character to byte string
-    for (size_t i = 0; i < len; i+=2) {
-        unsigned char b1 = charToHex(str[i]);
-		unsigned char b2 = charToHex(str[i+1]);
-		bytes[i/2] = (b1 << 4) + b2;
-    }
-
-    return bytes;
-}
-
-void hexToUpperCase(char* str) {
-	for(size_t i = 0; i < strlen(str); i++) {
-		if(str[i] >= 'a' && str[i] <= 'f') {
-			str[i] += 'A' - 'a';
-		}
-	}
-	return;
-}
-
-
-int compare_sad_entries(sad_entry_node *i, sad_entry_node *j) {
-	// verify enc key
-	TRACE("I_ENC_KEY: %s \t J_ENC_KEY: %s", i->encryption_key, j->encryption_key);
-
-	// was MAX_KEY
-	if (memcmp(i->encryption_key,j->encryption_key, MAX_KEY) != 0) {
-		ERR("Entries ENC KEYS differ");
+	/*int len = strlen(path);
+	//char *tmp_name = malloc(len + 1);
+	char * tmp_name=strdup(path);
+	char *name = strrchr(tmp_name, '/');
+	if (0 == strncmp("/name",name,strlen("/name"))) {
+		free(tmp_name);
 		return 1;
-    }
-	// verify int key
-	TRACE("I_INT_KEY: %s \t J_INT_KEY: %s", i->integrity_key, j->integrity_key);
-
-	// was MAX_KEY
-	if (memcmp(i->integrity_key,j->integrity_key, MAX_KEY) != 0) {
-		ERR("Entries AUTH KEYS differ");
-		return 1;
-    }
-	// Check that they have the same SPI
-	if (i->spi != j->spi) {
-		ERR("Entries SPI differ");
-		return 1;
-	}
-	// Check that they have they are using the same mode
-	if (i->ipsec_mode != j->ipsec_mode) {
-		ERR("Entries MODE differ");
-		return 1;
-	}
-	// TODO add more verification steps
-
-	// verify iv key for the moment ommit this
-    // if (strncmp(i->encryption_iv,j->encryption_iv,MAX_KEY) != 0) {
-    //         return 1;
-    // }
-	return 0;
-
-}
-
-
-
-// Mngmt of local sad-entries
-sad_entry_node *get_sad_node(sad_entry_node** main_sad_entry, char *sad_name) {
-    sad_entry_node *node = *main_sad_entry;
-	while (node != NULL) {
-		if (!strcmp(node->name, sad_name)) {
-			return node;
-		} else {
-			node = node->next;
-		}
-	}
-	return NULL;
-}
-
-sad_entry_node *get_sad_node_by_spi(sad_entry_node** main_sad_entry, unsigned long int spi) {
-    sad_entry_node *node = *main_sad_entry;
-	while (node != NULL) {
-		if (node->spi == spi) {
-			return node;
-		} else {
-			node = node->next;
-		}
-	}
-	return NULL;
-}
-
- int del_sad_node(sad_entry_node** main_sad_entry, char *sad_name) {
-	// Do we have initialized the sad_node
-	if (main_sad_entry == NULL) {
-		ERR("There is no SAD_ENTRIES stored");
-		return 1;
-	}
-	// Check that the initial sad_node is not the one we are looking for
-	if(strcmp(sad_name,(*main_sad_entry)->name) == 0) {
-		// This are some helpers variables
-		sad_entry_node *nh = *main_sad_entry;
-		// This is redundant, but just to clarify how this should work
-		if(nh -> next == NULL) {
-			*main_sad_entry = NULL;
-		} else {
-			*main_sad_entry = (*main_sad_entry)->next;
-		}
-		free(nh);
 	} else {
-		sad_entry_node *nc = *main_sad_entry;
-		sad_entry_node *np;
-		while (strcmp(sad_name,nc->name) != 0) {
-				np = nc;
-				nc = nc->next;
-				if (nc == NULL) {
-					ERR("There is no SAD_ENTRIES stored");
-					return 1;
-				} 
-		}
-		// Nc is the current node and we want to delete it
-		// Np in this case is the previous node
-		if (nc == NULL) {
-			np->next = NULL;
-		} else {
-			np->next = nc->next;
-		}
-		free(nc);
+		free(tmp_name);
+		return 0;
+	}*/
+	int len = strlen(path);
+	const char *last = &path[len-5];
+	if (0 == strcmp("/name",last)) {
+			return 1;
 	}
 	return 0;
-}
-
-int add_sad_node(sad_entry_node** main_sad_entry, sad_entry_node* new_sad) {
-    if (*main_sad_entry == NULL) {
-		// Do a copy
-        *main_sad_entry=new_sad;
-        new_sad->next=NULL;
-    } else{
-        sad_entry_node *node = *main_sad_entry;
-        while(node->next != NULL) {
-            node=node->next;
-		}
-        node->next=new_sad;
-    }
-	return 0;
-}
-
-void show_sad_list(sad_entry_node* main_sad_entry) {
-    sad_entry_node *node = main_sad_entry;
-    INFO("Name -- SPI -- SRC --- DST --- MODE --- ");
-    while (node != NULL){
-        INFO("%s --- %d --- %s --- %s --- %d --- ", node->name, node->spi, node->local_subnet, node->remote_subnet, node->ipsec_mode);
-        node=node->next;
-    }
-}
-
-void show_spd_list(spd_entry_node* init_spd_node){
 	
-	spd_entry_node *node = init_spd_node;
-	INFO("NAME --- INDEX --- REQ_ID --- SRC --- DST --- DIRECTION --- PROTOCOL --- MODE");
-	while (node != NULL){
-		INFO("%s --- %d --- %d --- %s --- %s --- %d --- %d ", node->name, node->index, node->req_id, node->local_subnet, node->remote_subnet, node->policy_dir,
-			node->ipsec_mode);
-		node=node->next;
-	}
 }
 
-spd_entry_node  *get_spd_node_by_index(spd_entry_node* main_spd_entry, int policy_index) {
-    spd_entry_node *node = main_spd_entry;
-	while (node != NULL) {
-		if (node->index == policy_index) {
-			return node;
-		} else {
-			node = node->next;
-		}
-	}
-	return NULL;
-}
 
-int del_spd_node(spd_entry_node** main_spd_entry, char *spd_name) {
-	// Do we have initialized the spd_node
-	if (main_spd_entry == NULL) {
-		ERR("There is no SPD_ENTRIES stored");
-		return 1;
-	}
-	// Check that the initial spd_node is not the one we are looking for
-	if(strcmp(spd_name,(*main_spd_entry)->name) == 0) {
-		// This are some helpers variables
-		spd_entry_node *nh = *main_spd_entry;
-		// This is redundant, but just to clarify how this should work
-		if(nh -> next == NULL) {
-			*main_spd_entry = NULL;
-		} else {
-			*main_spd_entry = (*main_spd_entry)->next;
-		}
-		free(nh); //free_spd_node(nh);
-	} else {
-		spd_entry_node *nc = *main_spd_entry;
-		spd_entry_node *np;
-		while (strcmp(spd_name,nc->name) != 0) {
-				np = nc;
-				nc = nc->next;
-				if (nc == NULL) {
-					ERR("There is no SPD_ENTRIES stored");
-					return 1;
-				} 
-		}
-		// Nc is the current node and we want to delete it
-		// Np in this case is the previous node
-		if (nc == NULL) {
-			np->next = NULL;
-		} else {
-			np->next = nc->next;
-		}
-		free(nc);//free_spd_node(nc);
-	}
-	return 0;
-}  //POLITO version?? need to check with the one on sysrepo_entries
-//TODO decide which one to keep, at the moment we coment this for compiling
 
- int add_spd_node(spd_entry_node** main_spd_entry, spd_entry_node* new_spd) {
-	if (*main_spd_entry == NULL) {
-		// Do a copy
-		*main_spd_entry=new_spd;
-		new_spd->next=NULL;
-	} else {
-		spd_entry_node *node = *main_spd_entry;
-		while(node->next != NULL)
-			node=node->next;
-		node->next=new_spd;
-	}
-	return 0;
-} 
+
+

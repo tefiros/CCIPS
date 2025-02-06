@@ -16,7 +16,9 @@
 #define LOG_VERSION "0.1.0"
 
 
-
+#define CI_VERB_ERROR 0   /**< Print only error messages. */
+#define CI_VERB_INFO 1	 /**< Besides errors and warnings, print some other verbose messages. */
+#define CI_VERB_DEBUG 2    /**< Print all messages including some development debug messages. */
 
 typedef struct {
   va_list ap;
@@ -31,14 +33,7 @@ typedef struct {
 typedef void (*log_LogFn)(log_Event *ev);
 typedef void (*log_LockFn)(bool lock, void *udata);
 
-enum {  LOG_FATAL,LOG_ERROR,LOG_WARN,LOG_INFO,  LOG_DEBUG, LOG_TRACE };
-
-#define CI_VERB_FATAL LOG_FATAL
-#define CI_VERB_ERROR LOG_ERROR 
-#define CI_VERB_WARN LOG_WARN
-#define CI_VERB_INFO LOG_INFO
-#define CI_VERB_DEBUG LOG_DEBUG
-#define CI_VERB_TRACE LOG_TRACE
+enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
 
 #define log_trace(...) log_log(LOG_TRACE, __FILE__, __LINE__, __VA_ARGS__)
 #define log_debug(...) log_log(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
@@ -54,21 +49,15 @@ enum {  LOG_FATAL,LOG_ERROR,LOG_WARN,LOG_INFO,  LOG_DEBUG, LOG_TRACE };
 #define WARN(...)  log_log(LOG_WARN,  __FILE__, __LINE__, __VA_ARGS__)
 #define ERROR(...) log_log(LOG_ERROR, __FILE__, __LINE__, __VA_ARGS__)
 #define ERR(...) log_log(LOG_ERROR, __FILE__, __LINE__, __VA_ARGS__)
-#define FATAL(...) log_log(LOG_FATAL, __FILE__, __LINE__, __VA_ARGS__)  
+#define FATAL(...) log_log(LOG_FATAL, __FILE__, __LINE__, __VA_ARGS__)
 
-
-extern const char* log_level_string(int level);
-extern void log_set_lock(log_LockFn fn, void *udata);
-extern void log_set_level(int level);
-extern void log_set_quiet(bool enable);
-extern int log_add_callback(log_LogFn fn, void *udata, int level);
-extern int log_add_fp(FILE *fp, int level);
-extern int get_verbose_level();
-extern void log_log(int level, const char *file, int line, const char *fmt, ...);
-
-
-
-
-
+const char* log_level_string(int level);
+void log_set_lock(log_LockFn fn, void *udata);
+void log_set_level(int level);
+void log_set_quiet(bool enable);
+int log_add_callback(log_LogFn fn, void *udata, int level);
+int log_add_fp(FILE *fp, int level);
+int get_verbose_level();
+void log_log(int level, const char *file, int line, const char *fmt, ...);
 
 #endif

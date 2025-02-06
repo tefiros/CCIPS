@@ -294,7 +294,7 @@ int sad_state_cb(sr_session_ctx_t *session, const char *module_name, const char 
 	  int rc;
     
 	  //rc = get_sad_state(xpath, values, values_cnt, private_ctx);
-	  //rc = get_sad_state(session, module_name, xpath, request_xpath, request_id, parent, private_data);
+	  rc = get_sad_state(session, module_name, xpath, request_xpath, request_id, parent, private_data);
 	  if (SR_ERR_OK != rc) {
 	      ERR("sad_lifetime_current_cb: %s", sr_strerror(rc));
 	      return rc;
