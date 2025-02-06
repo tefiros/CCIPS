@@ -1,9 +1,11 @@
 package i2nsf
 
 import (
+	"encoding/json"
 	"fmt"
 	log "i2nsf-controller/logger"
 	"i2nsf-controller/swagger"
+	"io/ioutil"
 	"math/rand"
 	"sync"
 	"time"
@@ -101,6 +103,57 @@ type IpsecConfig struct {
 	reKeysDone map[int64]bool
 }
 
+// ToJSON converts an IpsecConfig instance to its JSON representation.
+func (config *Handler) ToJSON(id uuid.UUID) (string, error) {
+	// Acquire a read lock to safely access the structure
+	//config.lock.RLock()
+	//defer config.lock.RUnlock()
+
+	// Convert the structure to JSON
+	jsonData, err := json.Marshal(config.GetConfigH())
+	if err != nil {
+		return "", err
+	}
+	log.Debug("pruebaaaa: %s", jsonData)
+	return string(jsonData), nil
+}
+
+// SendJSON sends the JSON representation of the configuration to a specific URL using a POST request
+/*func (config *IpsecConfig) SendJSON(url string) error {
+	jsonString, err := config.ToJSON()
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(jsonString)))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to send JSON: received status %s", resp.Status)
+	}
+
+	return nil
+}*/
+
+func SaveConfigToFile(config *Handler, filename string, id uuid.UUID) error {
+	// Get the JSON representation
+	jsonData, err := config.ToJSON(id)
+	if err != nil {
+		return err
+	}
+
+	// Save JSON data to file
+	err = ioutil.WriteFile(filename, []byte(jsonData), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing to file: %v", err)
+	}
+
+	return nil
+}
+
 // NewConfigFromSwagger function that returns
 func NewConfigFromSwagger(node1, node2 swagger.Node, softLifetime, hardLifetime swagger.LifetimeConfig, confType IPsecConfigType, cryptoCfg *CryptoConfig, id uuid.UUID) (cfg *IpsecConfig, err error) {
 	cfg = &IpsecConfig{
@@ -159,12 +212,12 @@ func (c *IpsecConfig) SetNewSPI() {
 
 // CreateDelSAD wrapper of the formatDelSAD
 func (c *IpsecConfig) CreateDelSAD() string {
-	return formatDelSAD(c)
+	return formatDelSADJson(c)
 }
 
 // CreateDelSPD wrapper of the formatDelSPD
 func (c *IpsecConfig) CreateDelSPD() string {
-	return formatDelSPD(c)
+	return formatDelSPDJson(c)
 }
 
 // CreateSADConfig returns the <sad-entry> configuration based in the current status of the IPsecConfigStructure
@@ -183,6 +236,21 @@ func (c *IpsecConfig) CreateSADConfig() (outCfg string, inCfg string, err error)
 	return outCfg, inCfg, err
 }
 
+func (c *IpsecConfig) CreateSADConfigJson() (outCfg string, inCfg string, err error) {
+	switch c.confType {
+	case G2G:
+		{
+			// First set the config for the
+			outCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd) //antes c.dataOrigin donde DMZ
+			inCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dmzEnd)  //antes c.dataOrigin donde DMZ; dmzEnd antes era dataEnd
+		} //(c, c.prefixEnd, c.prefixOrigin, c.dmzEnd, c.dataOrigin)
+	default:
+		outCfg = formatH2HSADValuesJson(c, c.dataOrigin, c.dataEnd)
+		inCfg = formatH2HSADValuesJson(c, c.dataOrigin, c.dataEnd)
+	}
+	return outCfg, inCfg, err
+}
+
 // CreateSPDConfig returns the <spd-entry> configuration based in the current status of the IPsecConfigStructure
 func (c *IpsecConfig) CreateSPDConfig() (outCfg string, inCfg string, err error) {
 	switch c.confType {
@@ -196,6 +264,23 @@ func (c *IpsecConfig) CreateSPDConfig() (outCfg string, inCfg string, err error)
 		{
 			outCfg = formatH2HSPDValues(c, c.dataOrigin, c.dataEnd, "outbound")
 			inCfg = formatH2HSPDValues(c, c.dataOrigin, c.dataEnd, "inbound")
+		}
+	}
+	return outCfg, inCfg, err
+}
+
+func (c *IpsecConfig) CreateSPDConfigJson() (outCfg string, inCfg string, err error) {
+	switch c.confType {
+	case G2G:
+		{
+			// First set the config for the
+			outCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "outbound") // antes c.dataOrigin donde DMZ
+			inCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "inbound")   // antes c.dataOrigin donde DMZ igual que la de arriba los origenes y ends
+		} //(c, c.prefixEnd, c.prefixOrigin, c.dmzEnd, c.dataOrigin, "inbound")
+	default:
+		{
+			outCfg = formatH2HSPDValuesJson(c, c.dataOrigin, c.dataEnd, "outbound")
+			inCfg = formatH2HSPDValuesJson(c, c.dataOrigin, c.dataEnd, "inbound")
 		}
 	}
 	return outCfg, inCfg, err

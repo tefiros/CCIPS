@@ -6,6 +6,7 @@ import (
 	"fmt"
 	log "i2nsf-controller/logger"
 	"i2nsf-controller/swagger"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,6 +46,10 @@ func (s *StorageHandler) CreateHandler(request *swagger.I2NSFRequest) (interface
 	defer s.lock.Unlock()
 	s.storage[id] = h
 	log.Debug("Handler %s stored", id.String())
+	// Sacar el ID de aqui y hacer la primera llamada a la funcion que guarda/manda el JSON. Se podria en esta función tmb guardar el  uuid para poder acceder a el.
+	if err := SaveConfigToFile(h, "prueba.json", id); err != nil {
+		return nil, err
+	}
 	return h.cfg[0].ParseConfigToSwagger(), err
 }
 
@@ -67,6 +72,11 @@ func (s *StorageHandler) DeleteHandler(id uuid.UUID) error {
 func (s *StorageHandler) GetConfig(id uuid.UUID) interface{} {
 	h := *s.storage[id]
 	return h.cfg[0].ParseConfigToSwagger()
+}
+
+// Para el JSON
+func (s *Handler) GetConfigH() interface{} {
+	return s.cfg[0].ParseConfigToSwagger()
 }
 
 // Funcion encriptar: https://dev.to/elioenaiferrari/asymmetric-cryptography-with-golang-2ffd
@@ -233,7 +243,7 @@ func (h *Handler) SetInitialConfigValues() error {
 		return err
 	}
 	// Set spd2 outbound and spd1 inbound
-	spd2[1], spd1[1], err = h.cfg[1].CreateSPDConfig()
+	spd2[1], spd1[1], err = h.cfg[1].CreateSPDConfigJson()
 	if err != nil {
 		return err
 	}
@@ -243,16 +253,16 @@ func (h *Handler) SetInitialConfigValues() error {
 		return err
 	}
 	// Set sad2 outbound and sad1 inbound
-	sad2[1], sad1[1], err = h.cfg[1].CreateSADConfig()
+	sad2[1], sad1[1], err = h.cfg[1].CreateSADConfigJson()
 	if err != nil {
 		return err
 	}
 	log.Debug("Generated configuration values")
 	// Now format the data
-	s1DataIn := GenerateI2NSFConfig([]string{sad1[1]}, spd1[:])
-	s2DataIn := GenerateI2NSFConfig([]string{sad2[0]}, spd2[:])
-	s1DataOut := GenerateI2NSFConfig([]string{sad1[0]}, []string{})
-	s2DataOut := GenerateI2NSFConfig([]string{sad2[1]}, []string{})
+	s1DataIn := GenerateI2NSFConfigJson([]string{sad1[1]}, spd1[:])
+	s2DataIn := GenerateI2NSFConfigJson([]string{sad2[0]}, spd2[:])
+	s1DataOut := GenerateI2NSFConfigJson([]string{sad1[0]}, []string{})
+	s2DataOut := GenerateI2NSFConfigJson([]string{sad2[1]}, []string{})
 	// This setup is necessary so no traffic is lost when the SA are established
 	// Setup first inbound configs
 	if err := editConfig(h.s[0], s1DataIn); err != nil {
@@ -294,6 +304,7 @@ func (h *Handler) HandleNotification(event netconf.Event) {
 var threshold int64 = 5
 
 // processRekey Handles the rekey process if a SADBExpireNotification notification has been received.
+// Dentro de la función habria que llamar para guardar/mandar el json cada vez que se realice el proceso de rekey
 func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	h.locker.Lock()
 	defer h.locker.Unlock()
@@ -346,8 +357,8 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	cfg.SetNewSPI()
 	// Generate SAD entries
 	outSad, inSad, err := cfg.CreateSADConfig()
-	s1Data := GenerateI2NSFConfig([]string{outSad}, nil)
-	s2Data := GenerateI2NSFConfig([]string{inSad}, nil)
+	s1Data := GenerateI2NSFConfigJson([]string{outSad}, nil)
+	s2Data := GenerateI2NSFConfigJson([]string{inSad}, nil)
 	if err != nil {
 		log.Error("Couldn't generate sad entries during the rekey process of %s", cfg.name)
 		return err
@@ -375,6 +386,7 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	}
 
 	log.Info("Rekey process of %d already completed", cfg.reqId)
+
 	return nil
 }
 
@@ -411,6 +423,7 @@ func (h *Handler) Stop() error {
 	}
 
 	h.isStopped = true
+	time.Sleep(10 * time.Second)
 	for _, s := range h.s {
 		// TODO check if subscription (channels are stopped) after doing s.close
 		if err := s.Close(); err != nil {
@@ -441,6 +454,11 @@ func EstablishSession(address string) (*netconf.Session, error) {
 }
 func editConfig(s *netconf.Session, data string) error {
 	editMessage := message.NewEditConfig(message.DatastoreRunning, message.DefaultOperationTypeMerge, data)
+	//Save config to JSON file
+	err := ioutil.WriteFile("pruebas.json", []byte(data), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing to file: %v", err)
+	}
 	reply, err := s.SyncRPC(editMessage, 10000)
 	if err != nil {
 		log.Error(err.Error())
