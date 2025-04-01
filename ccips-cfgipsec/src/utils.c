@@ -61,9 +61,9 @@ int getAuthAlg(char* alg) {
 	else if (!strcmp(alg, "hmac-sha1-96") || !strcmp(alg, "hmac-sha1-96") ||
 		     !strcmp(alg, "hmac-sha1-160"))
 		return SADB_AALG_SHA1HMAC;
-	/*else if (!strcmp(alg, "hmac-sha2-256-128"))
-		return SADB_X_AALG_SHA2_256;
-	else if (!strcmp(alg, "hmac-sha2-384-192"))
+	else if (!strcmp(alg, "hmac-sha2-256"))
+		return SADB_X_AALG_SHA2_256HMAC;
+	/*else if (!strcmp(alg, "hmac-sha2-384-192"))
 		return SADB_X_AALG_SHA2_384;
 	else if (!strcmp(alg, "hmac-sha2-512-256"))
 		return SADB_X_AALG_SHA2_512;*/
@@ -77,6 +77,10 @@ int getEncryptAlg(char* alg) {
 		return SADB_EALG_DESCBC ;
 	else if (!strcmp(alg, "3des"))
 		return SADB_EALG_3DESCBC;
+	else if (!strcmp(alg, "aes-gcmv-16"))
+		return SADB_X_EALG_AES_GCM_ICV16;
+	else if (!strcmp(alg, "aes-gcmv-8"))
+		return SADB_X_EALG_AES_GCM_ICV8;
 	else if (!strcmp(alg,"aes-cbc")) {
 		return SADB_X_EALG_AESCBC;
 	}
@@ -105,6 +109,8 @@ const char * get_encrypt_str(int alg) {
     case SADB_EALG_3DESCBC:     return "3des";
     case SADB_EALG_NULL:        return "null";
 	case SADB_X_EALG_AESCBC:    return "aes-cbc";
+	case SADB_X_EALG_AES_GCM_ICV16: return "aes-gcmv-16";
+	case SADB_X_EALG_AES_GCM_ICV8: return "aes-gcmv-8";
 #ifdef SADB_X_EALG_CAST128CBC
     case SADB_X_EALG_CAST128CBC:    return "cast";
 #endif
@@ -126,6 +132,7 @@ get_auth_str(int alg) {
     switch (alg) {
     case SADB_AALG_MD5HMAC:     return "hmac-md5-96";
     case SADB_AALG_SHA1HMAC:    return "hmac-sha1-96";
+	case SADB_X_AALG_SHA2_256HMAC: 	return "hmac-sha2-256";
 /*#ifdef SADB_X_AALG_MD5
     case SADB_X_AALG_MD5:       return "Keyed MD5";
 #endif
@@ -146,7 +153,7 @@ get_auth_str(int alg) {
 #endif
 */
     default:                    sprintf(buf, "[Unknown authentication algorithm %d]", alg);
-                                return buf;
+    	return buf;
     }
 }
 
@@ -161,6 +168,7 @@ get_auth_alg(int alg) {
 	case SADB_AALG_NONE:		return "None";
 	case SADB_AALG_MD5HMAC:		return "HMAC-MD5";
 	case SADB_AALG_SHA1HMAC:	return "HMAC-SHA-1";
+	case SADB_X_AALG_SHA2_256HMAC:  return "HMAC-SHA2-256";
 #ifdef SADB_X_AALG_MD5
 	case SADB_X_AALG_MD5:		return "Keyed MD5";
 #endif
@@ -171,7 +179,7 @@ get_auth_alg(int alg) {
 	case SADB_X_AALG_NULL:		return "Null";
 #endif
 #ifdef SADB_X_AALG_SHA2_256
-	case SADB_X_AALG_SHA2_256:	return "SHA2-256";
+	case SADB_X_AALG_SHA2_256:	return "HMAC-SHA2-256";
 #endif
 #ifdef SADB_X_AALG_SHA2_384
 	case SADB_X_AALG_SHA2_384:	return "SHA2-384";
@@ -195,6 +203,8 @@ get_encrypt_alg(int alg) {
 	case SADB_EALG_3DESCBC:		return "3DES-CBC";
 	case SADB_EALG_NULL:		return "Null";
 	case SADB_X_EALG_AESCBC:    return "aes-cbc";
+	case SADB_X_EALG_AES_GCM_ICV16: return "aes-gcmv-16";
+	case SADB_X_EALG_AES_GCM_ICV8: return "aes-gcmv-8";
 #ifdef SADB_X_EALG_CAST128CBC
 	case SADB_X_EALG_CAST128CBC:	return "CAST128-CBC";
 #endif
