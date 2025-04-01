@@ -675,9 +675,13 @@ int pf_addsad(sad_entry_node *sad_node) {
                     keyext->sadb_key_len = (sizeof(*keyext) + (AALG_MD5HMAC_KEY_BITS/8) + 7) / 8;
                     keyext->sadb_key_bits = AALG_MD5HMAC_KEY_BITS;
             }
-            else{
+            else if{
                     keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA1HMAC_KEY_BITS/8) + 7) / 8;
                     keyext->sadb_key_bits = AALG_SHA1HMAC_KEY_BITS;
+            }
+	    else if (sad_node->integrity_alg == SADB_X_AALG_SHA2_256HMAC) {
+                    keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA2_256HMAC_KEY_BITS/8) + 7) / 8;
+                    keyext->sadb_key_bits = AALG_SHA2_256HMAC_KEY_BITS;
             }
             memcpy(keyext + 1, sad_node->integrity_key,  strlen(sad_node->integrity_key));
             len += keyext->sadb_key_len * 8;
@@ -1046,6 +1050,8 @@ char * pf_get_alg_enum_name(struct sadb_alg * alg, struct sadb_supported *sup) {
         return "des";
     } else if (0 == strcmp(name,"3DES-CBC")) {
         return "3des";
+    } else if (0 == strcmp(name,"HMAC-SHA2-256")){
+        return "hmac-sha2-256";
     } else if (0 == strcmp(name,"Blowfish-CBC")) {
         return "blowfish";
     } else {
