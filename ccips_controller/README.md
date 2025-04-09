@@ -51,6 +51,28 @@ The CCIPS controller is developed in go using the [`go-netconf-client`](https://
 
 ---
 
+### **4. Upload X.509 Certificate**
+- **Endpoint:** `/ccips/certificate`
+- **Method:** `POST`
+- **Summary:** Upload an X.509 certificate in PEM format.
+- **Description:** Allows uploading an X.509 certificate for use in the system.
+- **Request Body (JSON):**
+
+- ---
+
+### **5. Get Certificate by UUID**
+- **Endpoint:** `/ccips/certificate/{uuid}`
+- **Method:** `GET`
+- **Summary:** Retrieve a certificate by its UUID.
+- **Description:** Fetches the certificate associated with the provided identifier.
+- **Query Parameters:**
+- `filename` (string, required): The name of the certificate file.
+- **Responses:**
+- `200 OK`: Certificate retrieved successfully.
+- `500 Internal Server Error`: An error occurred while retrieving the certificate.
+
+---
+
 ## How to launch
 If you are running the CCIPS Controller, directly using the code, you need to first install golang using the instructions from [here](https://go.dev/doc/install).
 
