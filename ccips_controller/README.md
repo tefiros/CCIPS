@@ -1,11 +1,54 @@
 # I2NSF_go_controller
 
+© Mattin Antartiko Elorza Forcada
+© Victor Hernandez Fernandez
+
 # CCIPS Controller
 
 The CCIPS controller is developed in go using the [`go-netconf-client`](https://github.com/openshift-telco/go-netconf-client) library.
 
 
 ## API Endpoints
+
+### **1. Create IPsec Tunnel**
+- **Endpoint:** `/ccips`
+- **Method:** `POST`
+- **Summary:** Create an IPsec tunnel.
+- **Description:** Creates an I2NSF IPsec tunnel using the provided configuration.
+- **Request Body (JSON):**
+
+- **Responses:**
+- `200 OK`: Tunnel created successfully with details.
+- `500 Internal Server Error`: An error occurred while creating the tunnel.
+
+---
+
+### **2. Get IPsec Tunnel Status**
+- **Endpoint:** `/ccips/{uuid}`
+- **Method:** `GET`
+- **Summary:** Retrieve the status of an IPsec tunnel.
+- **Description:** Fetches the current status of the IPsec tunnel identified by its UUID.
+- **Path Parameters:**
+- `uuid` (string, required): The unique identifier of the IPsec tunnel.
+- **Responses:**
+- `200 OK`: Tunnel status retrieved successfully.
+- `400 Bad Request`: Invalid request or UUID.
+
+---
+
+### **3. Delete IPsec Tunnel**
+- **Endpoint:** `/ccips/{uuid}`
+- **Method:** `DELETE`
+- **Summary:** Delete an IPsec tunnel.
+- **Description:** Deletes the I2NSF IPsec tunnel identified by its UUID.
+- **Path Parameters:**
+- `uuid` (string, required): The unique identifier of the IPsec tunnel.
+- **Responses:**
+- `200 OK`: Tunnel deleted successfully.
+- `404 Not Found`: Tunnel not found.
+- `500 Internal Server Error`: An error occurred while deleting the tunnel.
+
+---
 
 ## How to launch
 If you are running the CCIPS Controller, directly using the code, you need to first install golang using the instructions from [here](https://go.dev/doc/install).
