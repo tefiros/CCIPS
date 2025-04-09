@@ -97,27 +97,27 @@ To run it, by default it runs at port 5000, so you can run the docker image as f
 docker run -it --rm -p 5000:5000 ccips_controller
 ```
 
-It will prompt the following message `INFO: 2023/10/23 15:24:19 main.go:12: HTTP server started`
+It will prompt the following message `INFO: 2025/04/09 09:24:19 main.go:12: HTTP server started`
 
-# Requests para el controller:
+# Requests for the controller:
 
-* Nodes: Información de los nodos con lo siguiente:
-    - ipData: IP con la que le va a ver el otro agente y la que va a usar para levantar el tunel.
-    - ipControl: IP que tiene en la red de control.
-    - ipDMZ: IP privada del agente.
-    - networkInternal: subred privada.
-* encAlg: Algoritmo usado por el tunel para encriptar. soporta:
+* Nodes: Information of the nodes with the following:
+    - ipData: IP with which the other agent is going to see it and the one it is going to use to raise the tunnel.
+    - ipControl: IP that it has in the control network.
+    - ipDMZ: Agent's private IP. (G2G)
+    - networkInternal: Private subnet. (G2G)
+* encAlg: Algorithm used by the tunnel to encrypt. supports:
     - des
     - 3des
     - aes
-* intAlg: Algoritmo usado por el tunel para comprobar la integridad de los paquetes. soporta:
-    - hmac-md5-96
-    - hmac-md5-128
-    - hmac-sha1-96
-    - hmac-sha1-160
-    - hmac-sha2-256
-* softLifeTime: Tiempo para inicializar el proceso de rekey.
-* hardLifeTime: Tiempo en el que si no se ha realizado el rekey tira el enlace ipsec.
+* intAlg: Algorithm used by the tunnel to check the integrity of the packets. supports:
+     - hmac-md5-96
+     - hmac-md5-128
+     - hmac-sha1-96
+     - hmac-sha1-160
+     - hmac-sha2-256
+* softLifeTime: Time for initialising the rekey process.
+* hardLifeTime: Time in which if the rekey has not been performed, it throws the ipsec link.
 
 # G2G
 ```xml
