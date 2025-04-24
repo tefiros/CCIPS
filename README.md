@@ -124,36 +124,71 @@ ip xfrm state flush
 To configure a G2G tunnel (tunnel mode) so you can enable a encrypted communication between networks 192.168.100.0/24 and 192.168.200.0/24 you can request the following to the controller.
 
 ```bash!
- curl -X 'POST' \
-  'http://controller_ip:5000/ccips' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "nodes": [
-    {
-        "ipData": "192.168.165.169",
-        "ipControl": "192.168.165.169",
-        "networkInternal" : "192.168.100.0/24"  
-    },
-    {
-        "ipData": "192.168.165.93",
-        "ipControl": "192.168.165.93",
-        "networkInternal" : "192.168.200.0/24"
-    }
-  ],
-  "encAlg": [
-    "3-des-cbc"
-  ],
-  "intAlg": [
-    "sha1"
-  ],
-  "softLifetime": {
-    "nTime": 15
-  },
-  "hardLifetime": {
-    "nTime": 30
-  }
+curl -X 'POST' \
+'http://10.0.0.82:5000/ccips' \
+-H 'accept: application/json' \
+-H 'Content-Type: application/json' \
+-d '{
+"nodes": [
+ {
+    "ipData": "2.138.181.166",
+    "ipControl": "192.168.165.169",
+    "ipDMZ": "192.168.1.141",
+     "networkInternal" : "192.168.1.0/24" 
+ },
+ {
+     "ipData": "195.37.154.72",
+     "ipControl": "10.10.244.245",
+     "ipDMZ": "192.168.10.2",
+     "networkInternal" : "192.168.10.0/24"
+ }
+],
+"encAlg": [
+ "aes-cbc"
+],
+"intAlg": [
+ "sha2-256"
+],
+"softLifetime": {
+ "nTime": 15
+},
+"hardLifetime": {
+ "nTime": 30
+}
 }'
+curl -X 'POST' \
+'http://10.0.0.82:5000/ccips' \
+-H 'accept: application/json' \
+-H 'Content-Type: application/json' \
+-d '{
+"nodes": [
+ {
+    "ipData": "2.138.181.166",
+    "ipControl": "192.168.165.169",
+    "ipDMZ": "192.168.1.141",
+     "networkInternal" : "192.168.1.0/24" 
+ },
+ {
+     "ipData": "195.37.154.72",
+     "ipControl": "10.10.244.245",
+     "ipDMZ": "192.168.10.2",
+     "networkInternal" : "192.168.10.0/24"
+ }
+],
+"encAlg": [
+ "aes-cbc"
+],
+"intAlg": [
+ "sha2-256"
+],
+"softLifetime": {
+ "nTime": 15
+},
+"hardLifetime": {
+ "nTime": 30
+}
+}'
+
 ```
 ### How to check the entries:
 * SPD entries:
