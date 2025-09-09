@@ -312,6 +312,8 @@ func encAlgDecoder(alg EncAlgType) string {
 		return "aes-gcmv-12"
 	case 20:
 		return "aes-gcmv-16"
+	case 21:
+		return "aes-gcm"
 	default:
 		return "Algorithm not Identified"
 	}

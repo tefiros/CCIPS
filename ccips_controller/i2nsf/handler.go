@@ -158,7 +158,7 @@ func NewHandler(request *swagger.I2NSFRequest, id uuid.UUID) (*Handler, error) {
 	} else {
 		encAlg = v
 	}
-	if v, ok := AUTHALGS[request.IntAlg[0]]; !ok {
+	if v, ok := AUTHALGS[request.IntAlg[0]]; !ok && request.EncAlg[0] != "aes-gcmv-16"{
 		return nil, errors.New(fmt.Sprintf("AUTH algorithm not found: %s", request.IntAlg[0]))
 	} else {
 		authAlg = v
@@ -273,13 +273,13 @@ func (h *Handler) SetInitialConfigValues() error {
 	// This setup is necessary so no traffic is lost when the SA are established
 	// Setup first inbound configs
 
-	if err := editConfig(h.s[0], s1DataIn, h.cfg[0].origin); err != nil {
+	if err := editConfig(h.s[0], s1DataIn, h.cfg[0].origin, 0); err != nil {
 		log.Error("%s: %s", h.cfg[0].origin, err.Error())
 		// 	    log.error
 		return err
 	}
 
-	if err := editConfig(h.s[1], s2DataOut, h.cfg[1].origin); err != nil { // para el QUBIP antes 4. editconfig
+	if err := editConfig(h.s[1], s2DataOut, h.cfg[1].origin, 0); err != nil { // para el QUBIP antes 4. editconfig
 		log.Error("%s: %s", h.cfg[1].origin, err.Error())
 		return err
 	}
@@ -287,7 +287,7 @@ func (h *Handler) SetInitialConfigValues() error {
 	// Then setup outbounds configs
 	
 
-	if err := editConfig(h.s[0], s1DataOut, h.cfg[0].origin); err != nil {
+	if err := editConfig(h.s[0], s1DataOut, h.cfg[0].origin, 0); err != nil {
 		log.Error("%s: %s", h.cfg[0].origin, err.Error())
 		// 	    log.error
 		return err
@@ -295,7 +295,7 @@ func (h *Handler) SetInitialConfigValues() error {
 
 	
 
-	if err := editConfig(h.s[1], s2DataIn, h.cfg[1].origin); err != nil { // para el QUBIP antes 2. editconfig
+	if err := editConfig(h.s[1], s2DataIn, h.cfg[1].origin, 0); err != nil { // para el QUBIP antes 2. editconfig
 		log.Error("%s: %s", h.cfg[1].origin, err.Error())
 		return err
 	}
@@ -380,22 +380,22 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	// Install SAD entries //TODO check error
 	log.Info("Adding new entries out %s in %s SPI %d", cfg.origin, cfg.end, cfg.spi)
 
-	if err := editConfig(s1, s1Data, cfg.origin); err != nil {
+	if err := editConfig(s1, s1Data, cfg.origin, 0); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error()) //aqui tambien he quitado cfg.origin[0]
 		return err
 	}
-	if err := editConfig(s2, s2Data, cfg.end); err != nil {
+	if err := editConfig(s2, s2Data, cfg.end, 0); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
 
 	// Deleting old entries
 	log.Info("Deleting old entries out %s in %s SPI %d", cfg.origin, cfg.end, oldSPI)
-	if err := editConfig(s1, delSADXml, cfg.origin); err != nil {
+	if err := editConfig(s1, delSADXml, cfg.origin, 1); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
-	if err := editConfig(s2, delSADXml, cfg.end); err != nil {
+	if err := editConfig(s2, delSADXml, cfg.end, 1); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
@@ -405,42 +405,44 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	return nil
 }
 
-// TODO Add this method to close the sessions
+// Stop closes all sessions and removes SAD/SPD entries without rekeying.
 func (h *Handler) Stop() error {
 	h.locker.Lock()
 	defer h.locker.Unlock()
 
 	for _, i := range h.ids {
-		// Generate del SADs
-		delSADXml := i.cfg.CreateDelSAD()
-
-		// Generate del SPDs
-		delSPDXml := i.cfg.CreateDelSPD()
+		cfg := i.cfg
 		s1 := i.s1
 		s2 := i.s2
-		// Delete SADs
-		// First delete de outbound configs
-		// Then delete de inbound configs
 
-		if err := editConfig(s1, delSADXml, h.cfg[0].dataOrigin); err != nil {
-			log.Error(err.Error())
+		// Generate del SADs and SPDs
+		delSADXml := cfg.CreateDelSAD()
+		delSPDXml := cfg.CreateDelSPD()
+
+		// Delete SADs (outbound then inbound)
+		if err := editConfig(s1, delSADXml, cfg.origin, 1); err != nil {
+			log.Error("%s: %s", cfg.origin, err.Error())
 		}
-		if err := editConfig(s2, delSADXml, h.cfg[0].dataEnd); err != nil {
-			log.Error(err.Error())
+		if err := editConfig(s2, delSADXml, cfg.end, 1); err != nil {
+			log.Error("%s: %s", cfg.end, err.Error())
 		}
-		// Delete SPDs
-		if err := editConfig(s1, delSPDXml, h.cfg[0].dataOrigin); err != nil {
-			log.Error(err.Error())
+
+		// Delete SPDs (outbound then inbound)
+		if err := editConfig(s1, delSPDXml, cfg.origin, 1); err != nil {
+			log.Error("%s: %s", cfg.origin, err.Error())
 		}
-		if err := editConfig(s2, delSPDXml, h.cfg[0].dataEnd); err != nil {
-			log.Error(err.Error())
+		if err := editConfig(s2, delSPDXml, cfg.end, 1); err != nil {
+			log.Error("%s: %s", cfg.end, err.Error())
 		}
+
+		log.Info("Removed SAD/SPD entries for session %s (reqId=%d)", cfg.name, cfg.reqId)
 	}
 
 	h.isStopped = true
 	time.Sleep(10 * time.Second)
+
 	for _, s := range h.s {
-		// TODO check if subscription (channels are stopped) after doing s.close
+		// TODO: check if subscription channels are stopped after closing
 		if err := s.Close(); err != nil {
 			log.Error(err.Error())
 		}
@@ -448,6 +450,7 @@ func (h *Handler) Stop() error {
 
 	return nil
 }
+
 
 func EstablishSession(address string) (*netconf.Session, error) {
 	sshConfig := &ssh.ClientConfig{
@@ -467,32 +470,44 @@ func EstablishSession(address string) (*netconf.Session, error) {
 	}
 	return s, err
 }
-func editConfig(s *netconf.Session, data string, endpoint string) error {
-	// editMessage := message.NewEditConfig(message.DatastoreRunning, message.DefaultOperationTypeMerge, data)
 
-	// Send data to the specified endpoint
-	log.Debug("SENDING DATA TO%s:", endpoint)
-	url := fmt.Sprintf("http://%s:3000/register", endpoint)
+func editConfig(s *netconf.Session, data string, endpoint string, method int) error {
+	log.Debug("SENDING DATA TO %s:", endpoint)
+	url := fmt.Sprintf("http://%s:3000/ipsec-entries", endpoint)
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(data)))
-	if err != nil {
-		return fmt.Errorf("error sending request: %v", err)
-	}
-	defer resp.Body.Close()
+	var req *http.Request
+	var err error
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received non-OK response: %d", resp.StatusCode)
+	if method == 1 {
+		// DELETE 
+		req, err = http.NewRequest(http.MethodDelete, url, bytes.NewBuffer([]byte(data)))
+		if err != nil {
+			return fmt.Errorf("error creating DELETE request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("error sending DELETE request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("received non-OK response: %d", resp.StatusCode)
+		}
+	} else {
+		// POST 
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(data)))
+		if err != nil {
+			return fmt.Errorf("error sending POST request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("received non-OK response: %d", resp.StatusCode)
+		}
 	}
 
-	/* reply, err := s.SyncRPC(editMessage, 10000)
-	if err != nil {
-		log.Error(err.Error())
-		return err
-	}
-	if len(reply.Errors) > 0 {
-		return fmt.Errorf("RPC error: %v", reply.Errors)
-	}
-	*/
 	return nil
 }
 

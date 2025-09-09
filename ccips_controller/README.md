@@ -1,10 +1,7 @@
-# I2NSF_go_controller
+# ccips-controller
+Pilot 3 CCIPS controller component
 
 © Mattin Antartiko Elorza Forcada
-
-© Victor Hernandez Fernandez
-
-# CCIPS Controller
 
 The CCIPS controller is developed in go using the [`go-netconf-client`](https://github.com/openshift-telco/go-netconf-client) library.
 
@@ -51,27 +48,7 @@ The CCIPS controller is developed in go using the [`go-netconf-client`](https://
 
 ---
 
-### **4. Upload X.509 Certificate**
-- **Endpoint:** `/ccips/certificate`
-- **Method:** `POST`
-- **Summary:** Upload an X.509 certificate in PEM format.
-- **Description:** Allows uploading an X.509 certificate for use in the system.
-- **Request Body (JSON):**
 
-- ---
-
-### **5. Get Certificate by UUID**
-- **Endpoint:** `/ccips/certificate/{uuid}`
-- **Method:** `GET`
-- **Summary:** Retrieve a certificate by its UUID.
-- **Description:** Fetches the certificate associated with the provided identifier.
-- **Query Parameters:**
-- `filename` (string, required): The name of the certificate file.
-- **Responses:**
-- `200 OK`: Certificate retrieved successfully.
-- `500 Internal Server Error`: An error occurred while retrieving the certificate.
-
----
 
 ## How to launch
 If you are running the CCIPS Controller, directly using the code, you need to first install golang using the instructions from [here](https://go.dev/doc/install).
@@ -119,60 +96,25 @@ It will prompt the following message `INFO: 2025/04/09 09:24:19 main.go:12: HTTP
 * softLifeTime: Time for initialising the rekey process.
 * hardLifeTime: Time in which if the rekey has not been performed, it throws the ipsec link.
 
-# G2G
-```xml
-
-curl -X 'POST' \
-'http://10.0.0.82:5000/ccips' \
--H 'accept: application/json' \
--H 'Content-Type: application/json' \
--d '{
-"nodes": [
- {
-    "ipData": "2.138.181.166",
-    "ipControl": "192.168.165.169",
-    "ipDMZ": "192.168.1.141",
-     "networkInternal" : "192.168.1.0/24" 
- },
- {
-     "ipData": "195.37.154.72",
-     "ipControl": "10.10.244.245",
-     "ipDMZ": "192.168.10.2",
-     "networkInternal" : "192.168.10.0/24"
- }
-],
-"encAlg": [
- "aes-cbc"
-],
-"intAlg": [
- "sha2-256"
-],
-"softLifetime": {
- "nTime": 15
-},
-"hardLifetime": {
- "nTime": 30
-}
-}'
 
 
-```
+
 # H2H
 
 ```xml
 curl -X 'POST' \
-  'http://controller_ip:5000/ccips' \
+  'http://192.168.159.239:5000/ccips' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
   "nodes": [
       {
-        "ipData": "10.0.0.201",
-        "ipControl": "192.168.165.128"
+        "ipData": "10.0.0.11",
+        "ipControl": "192.168.159.35"
       },
     {
-      "ipData": "10.0.0.10",
-      "ipControl": "192.168.165.169"
+      "ipData": "10.0.0.20",
+      "ipControl": "192.168.159.21"
     }
   ],
   "encAlg": [
@@ -182,12 +124,10 @@ curl -X 'POST' \
     "sha2-256"
   ],
   "softLifetime": {
-    "nTime": 25
+    "nTime": 1500
   },
   "hardLifetime": {
-    "nTime": 50
+    "nTime": 3000
   }
 }'
-
-
 ```
