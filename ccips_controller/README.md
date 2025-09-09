@@ -49,6 +49,26 @@ The CCIPS controller is developed in go using the [`go-netconf-client`](https://
 ---
 
 
+### **4. Create QKD (Quantum Key Distribution) Forwarding**
+- **Endpoint:** `/forwardqkd`
+- **Method:** `POST`
+- **Summary:** Forward QKD configuration to remote endpoints.
+- **Description:** Forwards a QKD setup request to both specified endpoints (`endpoint1` and `endpoint2`). Each endpoint receives a `POST` to `/forwardqkd`.
+- **Request Body (JSON):**
+```bash
+
+curl -X POST http://192.168.159.239:5000/createqkd \
+  -H "Content-Type: application/json" \
+  -d '{
+    "use-qkd": "yes",
+    "pqc-algorithm": "kyber-512,
+    "hybridization-method": “xor”,
+    "endpoint1": "192.168.159.35”,
+    "endpoint2": "192.168.159.21”
+  }'
+```
+
+
 
 ## How to launch
 If you are running the CCIPS Controller, directly using the code, you need to first install golang using the instructions from [here](https://go.dev/doc/install).
