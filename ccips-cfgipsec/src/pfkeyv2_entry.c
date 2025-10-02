@@ -675,7 +675,7 @@ int pf_addsad(sad_entry_node *sad_node) {
                     keyext->sadb_key_len = (sizeof(*keyext) + (AALG_MD5HMAC_KEY_BITS/8) + 7) / 8;
                     keyext->sadb_key_bits = AALG_MD5HMAC_KEY_BITS;
             }
-            else if{
+            else if(sad_node->integrity_alg == SADB_X_AALG_SHA1HMAC){
                     keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA1HMAC_KEY_BITS/8) + 7) / 8;
                     keyext->sadb_key_bits = AALG_SHA1HMAC_KEY_BITS;
             }
