@@ -98,7 +98,7 @@ static void add_addr_ext(struct sadb_msg *msg, sad_entry_node *sad_node, uint16_
 
 static void* pf_sadb_esp_register_run(void* register_thread_info){
 
-    char buf[4096];
+    char buf[8192];
 	int     s, mypid;
     char *ntf = NULL;
     sr_session_ctx_t *session =NULL;
@@ -213,7 +213,7 @@ static void* pf_sadb_esp_register_run(void* register_thread_info){
 }
 
 int pf_exec_register(sr_session_ctx_t *session, int satype){
-	char buf[4096];
+	char buf[8192];
     int r;
     pthread_t pf_sadb_esp_register_run_thread;
 	struct sadb_msg msg;
@@ -524,7 +524,7 @@ int pf_delpolicy(spd_entry_node *spd_node) {
 // TODO Parser the structure that has been received from what it has been defined by UMU
 int pf_addsad(sad_entry_node *sad_node) {
     int s;
-    char buf[4096], *p;
+    char buf[8192], *p;
     struct sadb_msg *msg;
     struct sadb_sa *saext;
     struct sadb_x_sa2 *sa2;
@@ -592,7 +592,7 @@ int pf_addsad(sad_entry_node *sad_node) {
     len += lifetime->sadb_lifetime_len * 8;
     p += lifetime->sadb_lifetime_len * 8;
 
-
+    //mode tunnel
     if(sad_node->ipsec_mode == IPSEC_MODE_TUNNEL){
     
         int src_len = pf_setsadbaddr(p,SADB_EXT_ADDRESS_SRC, sad_node->inner_protocol, 32, sad_node->srcport, sad_node->tunnel_local);
@@ -601,7 +601,7 @@ int pf_addsad(sad_entry_node *sad_node) {
         len += dst_len; p += dst_len;
     
     } else {
-
+        //mode transport
         int src_len = pf_setsadbaddr(p,SADB_EXT_ADDRESS_SRC, sad_node->inner_protocol, get_mask(sad_node->local_subnet), sad_node->srcport, get_ip(sad_node->local_subnet));
         p += src_len; len += src_len;    
         int dst_len = pf_setsadbaddr(p,SADB_EXT_ADDRESS_DST, sad_node->inner_protocol, get_mask(sad_node->remote_subnet), sad_node->dstport, get_ip(sad_node->remote_subnet));
@@ -622,7 +622,7 @@ int pf_addsad(sad_entry_node *sad_node) {
             else if (sad_node->encryption_alg==SADB_X_EALG_AESCBC){
                 DBG("selected SADB_X_EALG_AESCBC");
                 keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_KEY_BITS;   
+                keyext->sadb_key_bits = EAL_AES_KEY_BITS;
             } else if (sad_node->encryption_alg==SADB_EALG_3DESCBC) {
                 DBG("selected SADB_EALG_3DESCBC");
                 keyext->sadb_key_len = (sizeof(*keyext) + (EALG_3DESCBC_KEY_BITS/8) + 7) / 8;
@@ -655,6 +655,7 @@ int pf_addsad(sad_entry_node *sad_node) {
                 DBG("selected SADB_X_EALG_AES_GCM_ICV12");
                 keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_GCM_ICV12_KEY_BITS/8) + 7) / 8;
                 keyext->sadb_key_bits = EAL_AES_GCM_ICV12_KEY_BITS;
+            // SADB_X_EALG_AES_GCM_ICV16
             } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_GCM_ICV16) {
                 DBG("selected SADB_X_EALG_AES_GCM_ICV16");
                 keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_GCM_ICV16_KEY_BITS/8) + 7) / 8;
@@ -662,6 +663,10 @@ int pf_addsad(sad_entry_node *sad_node) {
             }
             INFO("-----------Key length %d",keyext->sadb_key_len); 
             memcpy(keyext + 1, sad_node->encryption_key, strlen(sad_node->encryption_key));
+            //DBG("PFKEY ADD SAD - enc key: %s\n", sad_node->encryption_key);
+            //unsigned char *tmp_string = hexToByte(sad_node->encryption_key);
+            //memcpy(keyext + 1, tmp_string, keyext->sadb_key_bits/8);
+            //free(tmp_string);
             len += keyext->sadb_key_len * 8;
             p += keyext->sadb_key_len * 8;
     }
@@ -671,18 +676,21 @@ int pf_addsad(sad_entry_node *sad_node) {
         keyext = (struct sadb_key *) p;
             keyext->sadb_key_exttype = SADB_EXT_KEY_AUTH;
             keyext->sadb_key_reserved = 0;
-            if(sad_node->integrity_alg == AALG_MD5HMAC_KEY_BITS){
-                    keyext->sadb_key_len = (sizeof(*keyext) + (AALG_MD5HMAC_KEY_BITS/8) + 7) / 8;
-                    keyext->sadb_key_bits = AALG_MD5HMAC_KEY_BITS;
+            if(sad_node->integrity_alg == SADB_AALG_MD5HMAC){
+                keyext->sadb_key_len = (sizeof(*keyext) + (AALG_MD5HMAC_KEY_BITS/8) + 7) / 8;
+                keyext->sadb_key_bits = AALG_MD5HMAC_KEY_BITS;
             }
-            else if{
+            else if(sad_node->integrity_alg == SADB_AALG_SHA1HMAC) {
                     keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA1HMAC_KEY_BITS/8) + 7) / 8;
                     keyext->sadb_key_bits = AALG_SHA1HMAC_KEY_BITS;
             }
-	    else if (sad_node->integrity_alg == SADB_X_AALG_SHA2_256HMAC) {
+            else if (sad_node->integrity_alg == SADB_X_AALG_SHA2_256HMAC) {
                     keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA2_256HMAC_KEY_BITS/8) + 7) / 8;
                     keyext->sadb_key_bits = AALG_SHA2_256HMAC_KEY_BITS;
             }
+            DBG("PFKEY ADD SAD - int key: %s\n", sad_node->integrity_key);
+            //unsigned char *tmp_string = hexToByte(sad_node->integrity_key);
+            //memcpy(keyext + 1, tmp_string, (keyext->sadb_key_bits)/8);
             memcpy(keyext + 1, sad_node->integrity_key,  strlen(sad_node->integrity_key));
             len += keyext->sadb_key_len * 8;
             p += keyext->sadb_key_len * 8;
@@ -690,6 +698,7 @@ int pf_addsad(sad_entry_node *sad_node) {
     msg->sadb_msg_len = len / 8;
     INFO("print_sadb_msg pfkeyv2_addsad:");
     print_sadb_msg(buf, len);
+    TRACE("end print_sadb_msg pfkeyv2_addsad:");
     Write(s, buf, len);
     close(s);
     return SR_ERR_OK;
@@ -738,7 +747,7 @@ int pf_delsad(sad_entry_node *sad_node) {
     struct sadb_x_policy *policyext;
     int s, len, spi;
     int rc = SR_ERR_OK;
-    char buf[4096], *p;
+    char buf[8192], *p;
     struct sadb_sa *saext;
     struct sadb_x_sa2 *sa2;
     struct sadb_key *keyext;
@@ -750,10 +759,11 @@ int pf_delsad(sad_entry_node *sad_node) {
 
     // Build and write SADB_ADD request 
     bzero(&buf, sizeof(buf));
+    // Construct PF_KEY management message
     p = buf;
     msg = (struct sadb_msg *) p;
     msg->sadb_msg_version = PF_KEY_V2;
-    msg->sadb_msg_type = SADB_DELETE;
+    msg->sadb_msg_type = SADB_DELETE; // https://datatracker.ietf.org/doc/html/rfc2367#section-3.1.4
     msg->sadb_msg_satype = proto2satype(sad_node->protocol_parameters);
     msg->sadb_msg_pid = getpid();
     len = sizeof(*msg);
@@ -789,7 +799,7 @@ int pf_getsad(sad_entry_node *sad_node) {
     struct sadb_x_policy *policyext;
     int s, len, spi;
     int rc = SR_ERR_OK;
-    char buf[4096], *p;
+    char buf[8192], *p;
     struct sadb_sa *saext;
     struct sadb_x_sa2 *sa2;
     struct sadb_key *keyext;
@@ -841,7 +851,7 @@ int pf_get_sad_lifetime_current_by_spi(sad_entry_node *node)
     struct sadb_ext *ext;
     int i = 0;
     int s;
-    char buf[4096];
+    char buf[8192];
     struct sadb_msg msg;
     int goteof;
     int rc = 0;   
@@ -916,10 +926,10 @@ int pf_get_sad_lifetime_current_by_spi(sad_entry_node *node)
                 //default: DBG("ext type: %i", ext->sadb_ext_type);
             }
             msglen -= ext->sadb_ext_len << 3;
-            ext = (char *)ext + (ext->sadb_ext_len << 3);
+            ext = (struct sadb_ext*)((char *)ext + (ext->sadb_ext_len << 3));
         }
 
-        if (i == 1) return SR_ERR_OK;
+        //if (i == 1) return SR_ERR_OK;
 
         if (msgp->sadb_msg_seq == 0)
              goteof = 1;
@@ -1050,10 +1060,13 @@ char * pf_get_alg_enum_name(struct sadb_alg * alg, struct sadb_supported *sup) {
         return "des";
     } else if (0 == strcmp(name,"3DES-CBC")) {
         return "3des";
-    } else if (0 == strcmp(name,"HMAC-SHA2-256")){
-        return "hmac-sha2-256";
+    }else if (0 == strcmp(name,"HMAC-SHA2-256")){
+            return "hmac-sha2-256";
     } else if (0 == strcmp(name,"Blowfish-CBC")) {
         return "blowfish";
+    }else if (0 == strcmp(name,"HMAC-SHA2-256")){
+        return "hmac-sha2-256";
+
     } else {
         DBG("pf_get_alg_enum_name unknown : %s]", name);
         return NULL;
@@ -1253,5 +1266,6 @@ int parse_pfkey_message(struct sadb_msg *msg, pfkey_msg_t *out)
 
 	return 0;
 }
+
 
 
