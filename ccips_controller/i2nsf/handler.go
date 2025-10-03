@@ -245,13 +245,13 @@ func (h *Handler) SetInitialConfigValues() error {
 	// This setup is necessary so no traffic is lost when the SA are established
 	// Setup first inbound configs
 
-	if err := editConfig(h.s[0], s1DataIn, 0); err != nil { //los editconfig están modificados ya que NO hay que especificar el endpoint de un proxy
+	if err := editConfig(h.s[0], s1DataIn); err != nil { //los editconfig están modificados ya que NO hay que especificar el endpoint de un proxy
 		log.Error("%s: %s", h.cfg[0].origin, err.Error())
 		// 	    log.error
 		return err
 	}
 
-	if err := editConfig(h.s[1], s2DataOut, 0); err != nil { 
+	if err := editConfig(h.s[1], s2DataOut); err != nil { 
 		log.Error("%s: %s", h.cfg[1].origin, err.Error())
 		return err
 	}
@@ -259,7 +259,7 @@ func (h *Handler) SetInitialConfigValues() error {
 	// Then setup outbounds configs
 	
 
-	if err := editConfig(h.s[0], s1DataOut, 0); err != nil {
+	if err := editConfig(h.s[0], s1DataOut); err != nil {
 		log.Error("%s: %s", h.cfg[0].origin, err.Error())
 		// 	    log.error
 		return err
@@ -267,7 +267,7 @@ func (h *Handler) SetInitialConfigValues() error {
 
 	
 
-	if err := editConfig(h.s[1], s2DataIn, 0); err != nil { 
+	if err := editConfig(h.s[1], s2DataIn); err != nil { 
 		log.Error("%s: %s", h.cfg[1].origin, err.Error())
 		return err
 	}
@@ -352,22 +352,22 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	// Install SAD entries //TODO check error
 	log.Info("Adding new entries out %s in %s SPI %d", cfg.origin, cfg.end, cfg.spi)
 
-	if err := editConfig(s1, s1Data, 0); err != nil {
+	if err := editConfig(s1, s1Data); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error()) //aqui tambien he quitado cfg.origin[0]
 		return err
 	}
-	if err := editConfig(s2, s2Data, 0); err != nil {
+	if err := editConfig(s2, s2Data); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
 
 	// Deleting old entries
 	log.Info("Deleting old entries out %s in %s SPI %d", cfg.origin, cfg.end, oldSPI)
-	if err := editConfig(s1, delSADXml, 1); err != nil {
+	if err := editConfig(s1, delSADXml); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
-	if err := editConfig(s2, delSADXml, 1); err != nil {
+	if err := editConfig(s2, delSADXml); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
@@ -392,18 +392,18 @@ func (h *Handler) Stop() error {
 		delSPDXml := cfg.CreateDelSPD()
 
 		// Delete SADs (outbound then inbound)
-		if err := editConfig(s1, delSADXml, 1); err != nil {
+		if err := editConfig(s1, delSADXml); err != nil {
 			log.Error("%s: %s", cfg.origin, err.Error())
 		}
-		if err := editConfig(s2, delSADXml, 1); err != nil {
+		if err := editConfig(s2, delSADXml); err != nil {
 			log.Error("%s: %s", cfg.end, err.Error())
 		}
 
 		// Delete SPDs (outbound then inbound)
-		if err := editConfig(s1, delSPDXml, 1); err != nil {
+		if err := editConfig(s1, delSPDXml); err != nil {
 			log.Error("%s: %s", cfg.origin, err.Error())
 		}
-		if err := editConfig(s2, delSPDXml, 1); err != nil {
+		if err := editConfig(s2, delSPDXml); err != nil {
 			log.Error("%s: %s", cfg.end, err.Error())
 		}
 
@@ -443,37 +443,19 @@ func EstablishSession(address string) (*netconf.Session, error) {
 	return s, err
 }
 
-func editConfig(s *netconf.Session, data string, method int) error {
-	var editMessage *message.EditConfig
-
-	if method == 1 {
-		// DELETE
-		editMessage = message.NewEditConfig(
-			message.DatastoreRunning,
-			message.DefaultOperationTypeMerge,
-			data,
-		)
-	} else {
-		// POST (merge por defecto)
-		editMessage = message.NewEditConfig(
-			message.DatastoreRunning,
-			message.DefaultOperationTypeMerge,
-			data,
-		)
-	}
-
+func editConfig(s *netconf.Session, data string) error {
+	editMessage := message.NewEditConfig(message.DatastoreRunning, message.DefaultOperationTypeMerge, data)
 	reply, err := s.SyncRPC(editMessage, 100)
 	if err != nil {
 		log.Error(err.Error())
 		return err
 	}
-
 	if len(reply.Errors) > 0 {
-		return fmt.Errorf("RPC error: %v", reply.Errors)
+		return errors.New(fmt.Sprintf("RPC error: %v", reply.Errors))
 	}
-
-	return nil
+	return err
 }
+
 
 func defaultLogRpcReplyCallback(eventId string) netconf.Callback {
 	return func(event netconf.Event) {
