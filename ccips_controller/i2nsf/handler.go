@@ -1,13 +1,11 @@
 package i2nsf
 
 import (
-	"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	log "i2nsf-controller/logger"
 	"i2nsf-controller/swagger"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
