@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/google/uuid"
 	"github.com/openshift-telco/go-netconf-client/netconf"
 	"github.com/openshift-telco/go-netconf-client/netconf/message"
@@ -451,7 +450,7 @@ func editConfig(s *netconf.Session, data string, method int) error {
 		// DELETE
 		editMessage = message.NewEditConfig(
 			message.DatastoreRunning,
-			message.DefaultOperationTypeDelete,
+			message.DefaultOperationTypeMerge,
 			data,
 		)
 	} else {
