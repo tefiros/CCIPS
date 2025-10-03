@@ -287,10 +287,10 @@ func GenerateI2NSFConfig(SADEntries, SPDEntries []string) string {
 	var data string
 	// First parse sad entries when len(SPDEntries) > 0
 	if len(SPDEntries) > 0 {
-		data = fmt.Sprintf("%s", strings.Join(SPDEntries, "\n"))
+		data = fmt.Sprintf("<spd>%s</spd>", strings.Join(SPDEntries, "\n"))
 	}
 	if len(SADEntries) > 0 {
-		entries := fmt.Sprintf("\n%s\n", strings.Join(SADEntries, "\n"))
+		entries := fmt.Sprintf("<sad>\n%s\n</sad>", strings.Join(SADEntries, "\n"))
 		if len(data) > 0 {
 			data = fmt.Sprintf("%s%s", data, entries)
 		} else {
