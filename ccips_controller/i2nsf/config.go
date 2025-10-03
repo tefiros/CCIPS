@@ -212,12 +212,12 @@ func (c *IpsecConfig) SetNewSPI() {
 
 // CreateDelSAD wrapper of the formatDelSAD
 func (c *IpsecConfig) CreateDelSAD() string {
-	return formatDelSADJson(c)
+	return formatDelSAD(c)
 }
 
 // CreateDelSPD wrapper of the formatDelSPD
 func (c *IpsecConfig) CreateDelSPD() string {
-	return formatDelSPDJson(c)
+	return formatDelSPD(c)
 }
 
 // CreateSADConfig returns the <sad-entry> configuration based in the current status of the IPsecConfigStructure
@@ -312,6 +312,8 @@ func encAlgDecoder(alg EncAlgType) string {
 		return "aes-gcmv-12"
 	case 20:
 		return "aes-gcmv-16"
+	case 21:
+		return "aes-gcm"
 	default:
 		return "Algorithm not Identified"
 	}

@@ -48,9 +48,9 @@ func (s *StorageHandler) CreateHandler(request *swagger.I2NSFRequest) (interface
 	s.storage[id] = h
 	log.Debug("Handler %s stored", id.String())
 	// Sacar el ID de aqui y hacer la primera llamada a la funcion que guarda/manda el JSON. Se podria en esta función tmb guardar el  uuid para poder acceder a el.
-	if err := SaveConfigToFile(h, "prueba.json", id); err != nil {
+	/*if err := SaveConfigToFile(h, "prueba.json", id); err != nil {
 		return nil, err
-	}
+	}*/
 	return h.cfg[0].ParseConfigToSwagger(), err
 }
 
@@ -75,36 +75,11 @@ func (s *StorageHandler) GetConfig(id uuid.UUID) interface{} {
 	return h.cfg[0].ParseConfigToSwagger()
 }
 
-// Para el JSON
+// Para el JSON que luego se usa en el config.go
 func (s *Handler) GetConfigH() interface{} {
 	return s.cfg[0].ParseConfigToSwagger()
 }
 
-// Funcion encriptar: https://dev.to/elioenaiferrari/asymmetric-cryptography-with-golang-2ffd
-// msg es el mensage que qeuremos encriptar y key es la dirección de donde se encuentra la clave publica .pem
-/*func Encrypt(msg []byte, key string) []byte {
-	publicKeyPEM, err := os.ReadFile(key)
-	if err != nil {
-		panic(err)
-	}
-
-	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
-	if publicKeyBlock == nil {
-		panic(err)
-	}
-
-	publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
-	if err != nil {
-		panic(err)
-	}
-
-	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return ciphertext
-} */
 
 var spiManager = new(SPIManager)
 
@@ -158,7 +133,7 @@ func NewHandler(request *swagger.I2NSFRequest, id uuid.UUID) (*Handler, error) {
 	} else {
 		encAlg = v
 	}
-	if v, ok := AUTHALGS[request.IntAlg[0]]; !ok {
+	if v, ok := AUTHALGS[request.IntAlg[0]]; !ok && request.EncAlg[0] != "aes-gcmv-16"{
 		return nil, errors.New(fmt.Sprintf("AUTH algorithm not found: %s", request.IntAlg[0]))
 	} else {
 		authAlg = v
@@ -239,47 +214,47 @@ func (h *Handler) SetInitialConfigValues() error {
 	var err error
 	// Set first the
 	// Set spd1 outbound and spd2 inbound
-	spd1[0], spd2[0], err = h.cfg[0].CreateSPDConfigJson()
+	spd1[0], spd2[0], err = h.cfg[0].CreateSPDConfig()
 	if err != nil {
 		return err
 	}
 	// Set spd2 outbound and spd1 inbound
-	spd2[1], spd1[1], err = h.cfg[1].CreateSPDConfigJson()
+	spd2[1], spd1[1], err = h.cfg[1].CreateSPDConfig()
 	if err != nil {
 		return err
 	}
 	// Set sad1 outbound and sad2 inbound
-	sad1[0], sad2[0], err = h.cfg[0].CreateSADConfigJson()
+	sad1[0], sad2[0], err = h.cfg[0].CreateSADConfig()
 	if err != nil {
 		return err
 	}
 	// Set sad2 outbound and sad1 inbound
-	sad2[1], sad1[1], err = h.cfg[1].CreateSADConfigJson()
+	sad2[1], sad1[1], err = h.cfg[1].CreateSADConfig()
 	if err != nil {
 		return err
 	}
 	log.Debug("Generated configuration values")
 	// Now format the data
-	s1DataIn := GenerateI2NSFConfigJson([]string{sad1[1]}, spd1[:])
-	s2DataIn := GenerateI2NSFConfigJson([]string{sad2[0]}, spd2[:])
-	s1DataOut := GenerateI2NSFConfigJson([]string{sad1[0]}, []string{})
-	s2DataOut := GenerateI2NSFConfigJson([]string{sad2[1]}, []string{})
+	s1DataIn := GenerateI2NSFConfig([]string{sad1[1]}, spd1[:])
+	s2DataIn := GenerateI2NSFConfig([]string{sad2[0]}, spd2[:])
+	s1DataOut := GenerateI2NSFConfig([]string{sad1[0]}, []string{})
+	s2DataOut := GenerateI2NSFConfig([]string{sad2[1]}, []string{})
 
-	log.Debug("SAD1[1]: %s", sad1[1])
+	/*log.Debug("SAD1[1]: %s", sad1[1])
 	log.Debug("SAD2[0]: %s", sad2[0])
 	log.Debug("SAD1[0]: %s", sad1[0])
-	log.Debug("SAD2[1]: %s", sad2[1])
+	log.Debug("SAD2[1]: %s", sad2[1])*/
 	//He hecho los prints y es como esperamos
 	// This setup is necessary so no traffic is lost when the SA are established
 	// Setup first inbound configs
 
-	if err := editConfig(h.s[0], s1DataIn, h.cfg[0].origin); err != nil {
+	if err := editConfig(h.s[0], s1DataIn, 0); err != nil { //los editconfig están modificados ya que NO hay que especificar el endpoint de un proxy
 		log.Error("%s: %s", h.cfg[0].origin, err.Error())
 		// 	    log.error
 		return err
 	}
 
-	if err := editConfig(h.s[1], s2DataOut, h.cfg[1].origin); err != nil { // para el QUBIP antes 4. editconfig
+	if err := editConfig(h.s[1], s2DataOut, 0); err != nil { 
 		log.Error("%s: %s", h.cfg[1].origin, err.Error())
 		return err
 	}
@@ -287,7 +262,7 @@ func (h *Handler) SetInitialConfigValues() error {
 	// Then setup outbounds configs
 	
 
-	if err := editConfig(h.s[0], s1DataOut, h.cfg[0].origin); err != nil {
+	if err := editConfig(h.s[0], s1DataOut, 0); err != nil {
 		log.Error("%s: %s", h.cfg[0].origin, err.Error())
 		// 	    log.error
 		return err
@@ -295,7 +270,7 @@ func (h *Handler) SetInitialConfigValues() error {
 
 	
 
-	if err := editConfig(h.s[1], s2DataIn, h.cfg[1].origin); err != nil { // para el QUBIP antes 2. editconfig
+	if err := editConfig(h.s[1], s2DataIn, 0); err != nil { 
 		log.Error("%s: %s", h.cfg[1].origin, err.Error())
 		return err
 	}
@@ -370,9 +345,9 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	cfg.cryptoConfig.SetNewCryptoValues()
 	cfg.SetNewSPI()
 	// Generate SAD entries
-	outSad, inSad, err := cfg.CreateSADConfigJson() //CAMBIADO
-	s1Data := GenerateI2NSFConfigJson([]string{outSad}, nil)
-	s2Data := GenerateI2NSFConfigJson([]string{inSad}, nil)
+	outSad, inSad, err := cfg.CreateSADConfig() //CAMBIADO por si no se necesita JSON
+	s1Data := GenerateI2NSFConfig([]string{outSad}, nil) //CAMBIADO por si no se necesita JSON
+	s2Data := GenerateI2NSFConfig([]string{inSad}, nil) //CAMBIADO por si no se necesita JSON
 	if err != nil {
 		log.Error("Couldn't generate sad entries during the rekey process of %s", cfg.name)
 		return err
@@ -380,22 +355,22 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	// Install SAD entries //TODO check error
 	log.Info("Adding new entries out %s in %s SPI %d", cfg.origin, cfg.end, cfg.spi)
 
-	if err := editConfig(s1, s1Data, cfg.origin); err != nil {
+	if err := editConfig(s1, s1Data, 0); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error()) //aqui tambien he quitado cfg.origin[0]
 		return err
 	}
-	if err := editConfig(s2, s2Data, cfg.end); err != nil {
+	if err := editConfig(s2, s2Data, 0); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
 
 	// Deleting old entries
 	log.Info("Deleting old entries out %s in %s SPI %d", cfg.origin, cfg.end, oldSPI)
-	if err := editConfig(s1, delSADXml, cfg.origin); err != nil {
+	if err := editConfig(s1, delSADXml, 1); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
-	if err := editConfig(s2, delSADXml, cfg.end); err != nil {
+	if err := editConfig(s2, delSADXml, 1); err != nil {
 		log.Error("%s: %s", cfg.origin, err.Error())
 		return err
 	}
@@ -405,42 +380,44 @@ func (h *Handler) processRekey(notification *SADBExpireNotification) error {
 	return nil
 }
 
-// TODO Add this method to close the sessions
+// Stop closes all sessions and removes SAD/SPD entries without rekeying.
 func (h *Handler) Stop() error {
 	h.locker.Lock()
 	defer h.locker.Unlock()
 
 	for _, i := range h.ids {
-		// Generate del SADs
-		delSADXml := i.cfg.CreateDelSAD()
-
-		// Generate del SPDs
-		delSPDXml := i.cfg.CreateDelSPD()
+		cfg := i.cfg
 		s1 := i.s1
 		s2 := i.s2
-		// Delete SADs
-		// First delete de outbound configs
-		// Then delete de inbound configs
 
-		if err := editConfig(s1, delSADXml, h.cfg[0].dataOrigin); err != nil {
-			log.Error(err.Error())
+		// Generate del SADs and SPDs
+		delSADXml := cfg.CreateDelSAD()
+		delSPDXml := cfg.CreateDelSPD()
+
+		// Delete SADs (outbound then inbound)
+		if err := editConfig(s1, delSADXml, 1); err != nil {
+			log.Error("%s: %s", cfg.origin, err.Error())
 		}
-		if err := editConfig(s2, delSADXml, h.cfg[0].dataEnd); err != nil {
-			log.Error(err.Error())
+		if err := editConfig(s2, delSADXml, 1); err != nil {
+			log.Error("%s: %s", cfg.end, err.Error())
 		}
-		// Delete SPDs
-		if err := editConfig(s1, delSPDXml, h.cfg[0].dataOrigin); err != nil {
-			log.Error(err.Error())
+
+		// Delete SPDs (outbound then inbound)
+		if err := editConfig(s1, delSPDXml, 1); err != nil {
+			log.Error("%s: %s", cfg.origin, err.Error())
 		}
-		if err := editConfig(s2, delSPDXml, h.cfg[0].dataEnd); err != nil {
-			log.Error(err.Error())
+		if err := editConfig(s2, delSPDXml, 1); err != nil {
+			log.Error("%s: %s", cfg.end, err.Error())
 		}
+
+		log.Info("Removed SAD/SPD entries for session %s (reqId=%d)", cfg.name, cfg.reqId)
 	}
 
 	h.isStopped = true
 	time.Sleep(10 * time.Second)
+
 	for _, s := range h.s {
-		// TODO check if subscription (channels are stopped) after doing s.close
+		// TODO: check if subscription channels are stopped after closing
 		if err := s.Close(); err != nil {
 			log.Error(err.Error())
 		}
@@ -448,6 +425,7 @@ func (h *Handler) Stop() error {
 
 	return nil
 }
+
 
 func EstablishSession(address string) (*netconf.Session, error) {
 	sshConfig := &ssh.ClientConfig{
@@ -467,32 +445,36 @@ func EstablishSession(address string) (*netconf.Session, error) {
 	}
 	return s, err
 }
-func editConfig(s *netconf.Session, data string, endpoint string) error {
-	// editMessage := message.NewEditConfig(message.DatastoreRunning, message.DefaultOperationTypeMerge, data)
 
-	// Send data to the specified endpoint
-	log.Debug("SENDING DATA TO%s:", endpoint)
-	url := fmt.Sprintf("http://%s:3000/register", endpoint)
+func editConfig(s *netconf.Session, data string, method int) error {
+	var editMessage *message.EditConfig
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(data)))
-	if err != nil {
-		return fmt.Errorf("error sending request: %v", err)
+	if method == 1 {
+		// DELETE
+		editMessage = message.NewEditConfig(
+			message.DatastoreRunning,
+			message.DefaultOperationTypeDelete,
+			data,
+		)
+	} else {
+		// POST (merge por defecto)
+		editMessage = message.NewEditConfig(
+			message.DatastoreRunning,
+			message.DefaultOperationTypeMerge,
+			data,
+		)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received non-OK response: %d", resp.StatusCode)
-	}
-
-	/* reply, err := s.SyncRPC(editMessage, 10000)
+	reply, err := s.SyncRPC(editMessage, 100)
 	if err != nil {
 		log.Error(err.Error())
 		return err
 	}
+
 	if len(reply.Errors) > 0 {
 		return fmt.Errorf("RPC error: %v", reply.Errors)
 	}
-	*/
+
 	return nil
 }
 

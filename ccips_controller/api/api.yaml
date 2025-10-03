@@ -89,17 +89,13 @@ paths:
       description: Remove I2NSF
       tags:
         - I2NSF
-  /ccips/certificate:
+  /forwardqkd:
     post:
-      summary: Upload X.509 Certificate on string format
-      operationId: api.upload_certificate
-      responses:
-        '200':
-          $ref: '#/components/responses/Response'
-        '404':
-          $ref: '#/components/responses/Error'
-        '500':
-          $ref: '#/components/responses/Error'
+      summary: Forward QKD session creation request
+      operationId: api.forward_qkd
+      description: |
+        Forwards a QKD session creation request to both specified endpoints (`endpoint1` and `endpoint2`).
+        Returns success if both endpoints respond successfully.
       requestBody:
         required: true
         content:
@@ -107,44 +103,66 @@ paths:
             schema:
               type: object
               properties:
-                certificate:
+                use-qkd:
                   type: string
-                  description: X.509 certificate in PEM format
+                  enum: [yes, no]
+                  description: Flag to enable or disable QKD.
+                pqc-algorithm:
+                  type: string
+                  description: PQC algorithm to use (e.g., kyber-512).
+                hybridization-method:
+                  type: string
+                  enum: [xor, none]
+                  description: Hybridization method for the key.
+                endpoint1:
+                  type: string
+                  format: ipv4
+                  description: IP address of the first endpoint.
+                endpoint2:
+                  type: string
+                  format: ipv4
+                  description: IP address of the second endpoint.
               required:
-                - certificate
+                - use-qkd
+                - endpoint1
+                - endpoint2
             examples:
               example-1:
                 value:
-                  certificate: "hello-world"
-      tags:
-          - I2NSF
-  '/ccips/certificate/{uuid}':
-    get:
-      summary: Get Certificate by passing certificate':' uuid
-      operationId: api.get_certificate
-      parameters:
-        - in: query
-          name: filename
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Name of the certificate file
+                  use-qkd: "yes"
+                  pqc-algorithm: "kyber-512"
+                  hybridization-method: "xor"
+                  endpoint1: "192.168.159.35"
+                  endpoint2: "192.168.159.21"
       responses:
         '200':
-          description: Certificate retrieved successfully
+          description: Request forwarded successfully to both endpoints.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  certificate:
+                  status:
                     type: string
-                    example: "certificate:hello-world"
+                    example: "Reenvío exitoso a ambos endpoints"
+        '400':
+          description: Invalid request body (e.g., unreadable JSON).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+        '502':
+          description: Failed to forward request to one or both endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
         '500':
-          $ref: '#/components/responses/Error'
-      tags:
-        - I2NSF
+          description: Internal server error during processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
 components:
   schemas:
     Node:
@@ -162,29 +180,6 @@ components:
           format: ipv4
     DeploymentConfig:
       type: object
-      x-stoplight:
-        id: 642b7bab3b4ee
-      x-examples:
-        Example 1:
-          nodes:
-            - networkInternal: string
-              ipData: string
-              ipControl: string
-              ipDMZ: 192.168.0.1
-          encAlg:
-            - des
-          intAlg:
-            - hmac-md5-96
-          softLifetime:
-            nBytes: 0
-            nPackets: 0
-            nTime: 0
-            nTimeIdle: 0
-          hardLifetime:
-            nBytes: 0
-            nPackets: 0
-            nTime: 0
-            nTimeIdle: 0
       properties:
         nodes:
           type: array
@@ -218,8 +213,6 @@ components:
         - intAlg
     LifetimeConfig:
       title: LifetimeConfig
-      x-stoplight:
-        id: 6w43tbziq1wyt
       type: object
       description: Configuration of the lifetime values used by the tunnel
       properties:
@@ -238,14 +231,7 @@ components:
         nTimeIdle:
           type: number
           minimum: 0
-          exclusiveMinimum: false
           default: 0
-      x-examples:
-        Example 1:
-          nBytes: 0
-          nPackets: 0
-          nTime: 20
-          nTimeIdle: 0
   responses:
     IPsecInfo:
       description: Example response
@@ -274,70 +260,61 @@ components:
           examples:
             example-1:
               value:
-                  id: d7a83420-31fc-43eb-ae86-ddf891c9261b
-                  nodes:
-                    - ipControl: 192.168.165.141
-                      ipData: 10.0.0.61
-                      networkInternal: 192.168.200.0/24
-                    - ipControl: 192.168.165.101
-                      ipData: 10.0.0.161
-                      networkInternal: 192.168.100.0/24
-                  encAlg: 3-des-cbc
-                  intAlg: sha1
-                  softLifetime: 25
-                  hardLifetime: 50
-                
+                id: d7a83420-31fc-43eb-ae86-ddf891c9261b
+                nodes:
+                  - ipControl: 192.168.165.141
+                    ipData: 10.0.0.61
+                    networkInternal: 192.168.200.0/24
+                  - ipControl: 192.168.165.101
+                    ipData: 10.0.0.161
+                    networkInternal: 192.168.100.0/24
+                encAlg: 3-des-cbc
+                intAlg: sha1
+                softLifetime: 25
+                hardLifetime: 50
     Error:
-      description: Example response
+      description: Generic error response
       content:
         application/json:
           schema:
-            description: ''
             type: object
-            x-examples:
-              example-1:
-                code: 500
-                message: string
             properties:
               code:
                 type: number
               message:
                 type: string
-                minLength: 1
               description:
                 type: string
             required:
               - code
               - message
           examples:
-            '400':
+            example-400:
+              value:
+                code: 400
+                message: "JSON inválido"
+                description: "El cuerpo de la solicitud no se pudo decodificar."
+            example-502:
+              value:
+                code: 502
+                message: "Error al reenviar a endpoint1"
+                description: "No se pudo conectar al endpoint1."
+            example-500:
               value:
                 code: 500
-                message: Tunnel Not found
-                description: ''
-            '500':
-              value:
-                code: 500
-                description: Node is down
-                message: Internal server error
+                message: "Internal server error"
+                description: "Error al procesar la solicitud."
     Response:
       description: Example response
       content:
         application/json:
           schema:
-            description: ''
             type: object
-            x-examples:
-              example-1:
-                code: 500
-                message: Tunnel Not found
-                description: ''
             properties:
               code:
                 type: number
               message:
                 type: string
-                minLength: 1
             required:
               - code
               - message
@@ -346,4 +323,3 @@ components:
               value:
                 code: 200
                 message: I2NSF Removed
-  requestBodies: {}

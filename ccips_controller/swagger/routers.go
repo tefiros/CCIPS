@@ -97,4 +97,13 @@ var routes = Routes{
 		"/ccips/certificate/{uuid}",
 		ApiGetCertificate,
 	},
+
+	Route{
+		"ApiCreateQKD",
+		"POST",
+		"/ccips/createqkd",
+		ApiForwardQKD,
+	},
+
+
 }

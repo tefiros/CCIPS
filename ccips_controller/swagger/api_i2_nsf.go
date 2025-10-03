@@ -14,6 +14,8 @@ import (
 	"net/http"
 	"path"
 	"sync"
+	"io"
+	"bytes"
 
 	"github.com/google/uuid"
 )
@@ -77,6 +79,72 @@ func ApiStatusI2nsf(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	//w.WriteHeader(http.StatusOK)
+}
+
+type QKDRequest struct {
+	UseQKD              string `json:"use-qkd"`
+	PQCAlgorithm        string `json:"pqc-algorithm"`
+	HybridizationMethod string `json:"hybridization-method"`
+	Endpoint1           string `json:"endpoint1"`
+	Endpoint2           string `json:"endpoint2"`
+}
+
+func ApiForwardQKD(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	// Leer cuerpo de la solicitud
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading the body from the request", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// Decodificar el JSON original
+	var qkdReq QKDRequest
+	if err := json.Unmarshal(body, &qkdReq); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Construir URLs
+	url1 := fmt.Sprintf("http://%s:3000/createqkd", qkdReq.Endpoint1)
+	url2 := fmt.Sprintf("http://%s:3000/createqkd", qkdReq.Endpoint2)
+
+	// Crear nuevo JSON con endpoints
+	filteredBody := map[string]string{
+		"use-qkd":               qkdReq.UseQKD,
+		"pqc-algorithm":         qkdReq.PQCAlgorithm,
+		"hybridization-method":  qkdReq.HybridizationMethod,
+		"endpoint1": 			 qkdReq.Endpoint1,
+		"endpoint2": 			 qkdReq.Endpoint2,
+	}
+
+	postBody, err := json.Marshal(filteredBody)
+	if err != nil {
+		http.Error(w, "Error converting the body", http.StatusInternalServerError)
+		return
+	}
+
+	// POST al endpoint1
+	resp1, err := http.Post(url1, "application/json", bytes.NewBuffer(postBody))
+	if err != nil {
+		http.Error(w, "Error sending it to endpoint1: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp1.Body.Close()
+
+	// POST al endpoint2
+	resp2, err := http.Post(url2, "application/json", bytes.NewBuffer(postBody))
+	if err != nil {
+		http.Error(w, "Error sending it to endpoint2: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp2.Body.Close()
+
+	// Respuesta OK si ambos POST fueron exitosos
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"Successfully sent to both endpoints"}`))
 }
 
 // CertificateRequest represents the structure of the request body for uploading a certificate
