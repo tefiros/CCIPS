@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Page title block, extended by child templates -->
+    <title>{% block title %}{% endblock %} - Flask App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">  <!-- link to the style.css file importing its style features -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> <!-- link to the font awsome file importing its features -->
+</head>
+<body>
+    <!-- Header section with the main title and logo -->
+    <header class="header">
+        <!--<img src="{{ url_for('static', filename='logo_left.png') }}" alt="Left Logo"> -->
+        <h1>CCIPS</h1>
+        <img src="{{ url_for('static', filename='Telefonicalogo.png') }}" alt="Right Logo">
+    </header>
+
+    <!-- Hamburger button for toggling the sidebar, with the different sections of the app inside it-->
+    <div class="hamburger" onclick="toggleSidebar()">☰</div> 
+
+    <div id="sidebar" class="sidebar"> 
+      <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a> 
+      <a href="{{ url_for('view.view_home') }}">View</a> 
+      <a href="{{ url_for('create.create_home') }}">Create</a> 
+      <a href="{{ url_for('delete.delete_home') }}">Delete</a> 
+    </div>
+
+    <!-- Main content section where child templates will render their content -->
+    <section>
+        {% block content %}{% endblock %}
+    </section>
+
+    <script>
+        function toggleSidebar() {
+          const sidebar = document.getElementById("sidebar");
+          sidebar.style.width = sidebar.style.width === "240px" ? "0" : "240px";
+        }
+      
+        // Optional: close sidebar when clicking outside
+        window.onclick = function(event) {
+          const sidebar = document.getElementById("sidebar");
+          if (!event.target.matches('.hamburger') && sidebar.style.width === "240px") {
+            sidebar.style.width = "0";
+          }
+        }
+      </script>
+
+</body>
+</html>

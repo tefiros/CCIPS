@@ -1,0 +1,172 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+/* Header styling */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #0066FF;
+    color: white;
+}
+
+.header img {
+    height: 50px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    text-align: center;
+    flex-grow: 1;
+    font-size: 30px;
+}
+
+/*  Sidebar style */
+.sidebar {
+    height: 100%;
+    width: 0; 
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    background-color: #0066FF;
+    overflow-x: hidden;
+    padding-top: 60px;
+    transition: 0.2s;
+  }
+  
+  .sidebar a {
+    margin-top: 20px;
+    padding: 12px 20px;
+    text-decoration: none;
+    font-size: 20px;
+    color: white;
+    display: block;
+    transition: 0.3s;
+  }
+  
+  .sidebar a:hover {
+    background-color: #575757;
+  }
+  
+  .sidebar .closebtn {
+    position: absolute;
+    margin-top: 0px;
+    top: 15px;
+    right: 20px;
+    font-size: 40px;
+    color: white;
+  }
+  
+  /*  Hamburger icon */
+  .hamburger {
+    font-size: 40px;
+    cursor: pointer;
+    color: white;
+    padding: 15px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1100;
+    background-color: #0066FF;
+  }
+
+/* Content section */
+section {
+    padding: 20px;
+}
+
+/* Form container */
+.form-container {
+    width: 60%;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Dropdown selection */
+#operation {
+    width: 50%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* Tunnel Setup Section */
+.tunnel-setup {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Agents section */
+.agents-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    gap: 30px;
+}
+
+/* Individual agent sections */
+.agent {
+    width: 45%;
+    padding: 15px;
+    background: #e6e6e6;
+    border-radius: 8px;
+    margin-top: 20px; 
+    margin-bottom: 20px; 
+}
+
+/* Input fields */
+.agent label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+}
+
+.agent input {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+/* Submit button */
+.submit-button {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.submit-button button {
+    padding: 10px 20px;
+    background-color: #0066FF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.submit-button button:hover {
+    background-color: #0052cc;
+}
+
+.button-container {
+    width: 100%;
+    text-align: center;
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}

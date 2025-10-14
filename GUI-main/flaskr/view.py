@@ -1,0 +1,31 @@
+from flask import Blueprint, render_template, request
+import requests
+import json
+from flaskr.config import CCIPS_API
+
+view_bp = Blueprint('view', __name__, url_prefix='/view')
+
+
+@view_bp.route('/', methods=['GET', 'POST'])
+def view_home():
+    tunnel_data = None
+    error = None
+
+    if request.method == 'POST':
+        tunnel_id = request.form.get('data_id')
+        try:
+        
+            if tunnel_id == '':
+                error = "Introduce a tunnel ID to visualize"
+            else:
+           
+                response = requests.get(f"{CCIPS_API}/{tunnel_id}")
+                if response.status_code == 200:
+                    tunnel_data = response.json()
+                    print("API Response:", json.dumps(tunnel_data, indent=2))#SOLO UTIL PARA DEBUG
+                else:
+                    error = f"Tunnel not found or error: {response.text}"
+        except Exception as e:
+            error = f"Error contacting API: {str(e)}"
+
+    return render_template('view.html', title="View Data", tunnel=tunnel_data, error=error)

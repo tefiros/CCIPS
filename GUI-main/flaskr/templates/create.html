@@ -1,0 +1,226 @@
+<!-- HTML SECTION -->
+
+{% extends "base.html" %}
+
+{% block title %}Create Tunnel{% endblock %}
+
+{% block content %}
+    <h1>Create a New IPSec Tunnel</h1>
+
+    <!-- Dropdown menu to select the operation mode -->
+    <label>Select Operation Mode:</label>
+    <select id="operation_mode" name="operation_mode" onchange="toggleFields()">
+        <option value="H2H">Host-to-Host</option>
+        <option value="G2G">Gateway-to-Gateway</option>
+    </select><br><br>
+
+    
+    <!-- Main form to input tunnel information -->
+    <form id="createForm" class="form-container">
+        <div class="form-grid">
+    
+            <!-- Agent 1 section -->
+            <div class="card">
+                <h3>Agent 1</h3>
+                <label>Data IP:</label>
+                <input type="text" name="node1_ip_data" required>
+    
+                <label>Control IP:</label>
+                <input type="text" name="node1_ip_control" required>
+
+                <!-- Optional DMZ and Network fields (only for G2G mode) -->
+                <div id="node1_dmz_field" style="display: none;">
+                    <label>Dmz IP:</label>
+                    <input type="text" name="node1_dmz">
+                </div>
+    
+                <div id="node1_network_field" style="display: none;">
+                    <label>Internal Network:</label>
+                    <input type="text" name="node1_network">
+                </div>
+            </div>
+    
+            <!-- Agent 2 section -->
+            <div class="card">
+                <h3>Agent 2</h3>
+                <label>Data IP:</label>
+                <input type="text" name="node2_ip_data" required>
+    
+                <label>Control IP:</label>
+                <input type="text" name="node2_ip_control" required>
+
+                <!-- Optional DMZ and Network fields (only for G2G mode) -->
+                <div id="node2_dmz_field" style="display: none;">
+                    <label>Dmz IP:</label>
+                    <input type="text" name="node2_dmz">
+                </div>
+    
+                <div id="node2_network_field" style="display: none;">
+                    <label>Internal Network:</label>
+                    <input type="text" name="node2_network">
+                </div>
+            </div>
+    
+            <!-- Encryption n Integrity Parameters section -->
+            <div class="card full-width">
+                <h3>Security Parameters</h3>
+    
+                <label>Encryption Algorithm:</label>
+                <select name="encAlg">
+                    <option value="des">DES</option>
+                    <option value="3des">3-DES</option>
+                    <option value="aes-cbc">AES</option>
+                </select>
+    
+                <label>Integrity Algorithm:</label>
+                <select name="intAlg">
+                    <option value="hmac-md5-96">MD5-96</option>
+                    <option value="hmac-md5-128">MD5-128</option>
+                    <option value="hmac-sha1-96">SHA1-96</option>
+                    <option value="hmac-sha-160">SHA1-160</option>
+                    <option value="sha2-256">SHA2-256</option>
+                </select>
+    
+                <label>Soft Lifetime (seconds):</label>
+                <input type="number" name="softLifetime" value="25" required>
+    
+                <label>Hard Lifetime (seconds):</label>
+                <input type="number" name="hardLifetime" value="50" required>
+            </div>
+    
+        </div>
+    
+        <!-- Submit Button -->
+        <div class="button-container">
+            <button type="submit">Create Tunnel</button>
+        </div>
+    </form>
+    
+    <p id="responseMessage"></p> <!-- Placeholder for the response message after submission -->
+
+    <!-- JavaScript to handle form submission asynchronously -->
+    <script>
+        // Function to show/hide fields based on the selected operation mode
+        function toggleFields() {
+            let mode = document.getElementById("operation_mode").value;
+            let node1dmzField = document.getElementById("node1_dmz_field");
+            let node2dmzField = document.getElementById("node2_dmz_field");
+            let node1NetworkField = document.getElementById("node1_network_field");
+            let node2NetworkField = document.getElementById("node2_network_field");
+
+            if (mode === "G2G") {
+                node1dmzField.style.display = "block";
+                node2dmzField.style.display = "block";
+                node1NetworkField.style.display = "block";
+                node2NetworkField.style.display = "block";
+            } else {
+                node1dmzField.style.display = "none";
+                node2dmzField.style.display = "none";
+                node1NetworkField.style.display = "none";
+                node2NetworkField.style.display = "none";
+
+                document.querySelector('input[name="node1_dmz"]').value = "";
+                document.querySelector('input[name="node2_dmz"]').value = "";
+                document.querySelector('input[name="node1_network"]').value = "";
+                document.querySelector('input[name="node2_network"]').value = "";
+            }
+        }
+
+        document.getElementById("createForm").addEventListener("submit", async function(event) {
+            event.preventDefault(); //prevent default from subscription
+
+            //Build JSON from form data
+            let formData = new FormData(this);
+            let jsonObject = {};
+            formData.forEach((value, key) => { jsonObject[key] = value });
+
+            //send JSON to the flask backend
+            let response = await fetch("/create_tunnel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonObject)
+            });
+
+            //Display the response message
+            let result = await response.json();
+            document.getElementById("responseMessage").innerText = result.message || JSON.stringify(result);
+        
+            if (result.id) {
+                // Stores the tunnel ID in localStorage if its returned
+                let tunnels = JSON.parse(localStorage.getItem("tunnels") || "[]");
+                if (!tunnels.includes(result.id)) {
+                    tunnels.push(result.id);
+                    localStorage.setItem("tunnels", JSON.stringify(tunnels));
+                }
+            }
+
+        });
+    </script>
+
+    <style>
+        .form-container {
+            max-width: 900px;
+            margin: auto;
+        }
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card {
+            flex: 1;
+            min-width: 280px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card.full-width {
+            flex-basis: 100%;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #0066FF;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+    
+        .button-container button {
+            background-color: #007BFF;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+    
+        #responseMessage {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+{% endblock %}
