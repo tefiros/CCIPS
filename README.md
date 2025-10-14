@@ -1,243 +1,88 @@
-# CCIPS 
+# 🌐 CCIPS Web GUI
 
+Management and handling system developed with **Python Flask** to facilitate the use of the CCIPS controller.
 
-## ccips-cfgipsec
-Includes the latest agent code, it may have some additional code to another development usiging the enarx framework on the /src directory 
+This system provides the project with a graphical user interface that manages the external CCIPS controller API and enables the use of all its functionalities.
 
-## ccips-controller
-Includes the latest controller code developed on Go.
+Through this interface, users can easily **create**, **view**, and **delete** tunnels directly from the browser, while also displaying a simple graphical representation of the network topology.
 
-### Aditional notes
-Each directory has the corresponding README
+---
 
+## 📂 Project Structure
 
-# Deployment 
-
-## Requirements
-
-* Have a running CCIPS Controller. [How launch and build](https://github.com/tefiros/CCIPS/blob/main/ccips_controller/README.md)
-* Have two CCIPS agents. [Installation guide](https://github.com/tefiros/CCIPS/tree/main/ccips-cfgipsec#installation-guide)
-* A Mgmnt Network to allow communication between the Controller and the agents.
-* A Data network to so both agents can see each other.
-
-## Setting up all the process:
-
-## Controller
-
-In the VM with the controller just run the following command:
-```bash!
-docker run -it --rm -p 5000:5000 ccips_controller
 ```
-This will start a process that runs an HTTP server that handles the requests to deploy the IPsec Tunnel.
-
-## Agents
-In this scenario we are deploying two Agent running in docker mode.
-
-Here you only need to run as follows in each agent.
-```bash!
-docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
+flask/
+├── init.py     # Initializes the app and registers blueprints
+├── config.py   # CCIPS API controller address
+├── create.py   # Logic for tunnel creation
+├── delete.py   # Logic for tunnel deletion
+├── view.py     # Logic for tunnel visualization
+├── templates/
+│ ├── base.html     # Base layout template
+│ ├── create.html   # Tunnel creation form
+│ ├── delete.html   # Tunnel deletion form
+│ └── view.html     # Tunnel visualization and topology
+└── static/
+│ ├── style.css   # Custom styles
 ```
 
-## Deploying the tunnel
-### H2H
-You can check a similar demo in the [SPIRS Repository](https://www.spirs-project.eu/nextcloud/index.php/s/fBXpkbeH9WGKfMF).
-![](https://hackmd.io/_uploads/H1_I7MFz6.png)
+## :open_book: Project Guide
 
-### Controller request
-To configure a H2H tunnel (transport mode) so you can enable a encrypted communication between networks 192.168.165.169 and 192.168.165.93 you can request the following to the controller
-```bash!
-curl -X 'POST' \
-  'http://controller_ip:5000/ccips' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "nodes": [
-      {
-        "ipData": "10.0.0.100",
-        "ipControl": "192.168.165.93"
-      },
-    {
-      "ipData": "10.0.0.10",
-      "ipControl": "192.168.165.169"
-    }
-  ],
-  "encAlg": [
-    "3-des-cbc"
-  ],
-  "intAlg": [
-    "sha1"
-  ],
-  "softLifetime": {
-    "nTime": 25
-  },
-  "hardLifetime": {
-    "nTime": 50
-  }
-}'
+Check this simple guide for general info about the project code files.
+
+https://hackmd.io/@3f15EmG2QJ2UFNbDpGVjxg/BJYG7gCeeg
+
+---
+
+## ⚙️ Configuration
+
+The file `config.py` contains the adress where the CCIPS controller is running.
+```python
+CCIPS_API = "http://localhost:5000/ccips"
 ```
 
-### How to check the entries:
-* SPD entries:
-```
-ip xfrm policy
-```
-* SAD entries:
-```
-ip xfrm state
-```
+If this project runs in the same machine where the CCIPS controller is running no changes are needed as its configured for localhost:5000.
 
-### Reset scenario
+If CCIPS controller is running in a different place  make sure to update this file with the right adress and ensure conectivity between both CCIPS_controller and GUI hosts.
 
-## Standard reset
-If everything has run succesfuly, you can delete the deployed tunnel following this command:
+---
+
+## 🚀 Installation & Execution
+
+### 1. Install Python 3 and required tools
+
 ```bash
-curl -X 'DELETE' \
-  'http://controller_ip:5000/ccips/{id}'
+sudo apt-get install -y python3 python3-venv python3-pip
 ```
 
+### 2. Clone the repository
 
-
-### Removing entries from sysrepo
-
-If you are running the ccips without using the cointainer, it could be possible to have some entries stuck in sysrepo. To remove them, under the directory `examples` in the ccips_controller proyect, there is an script called `removeEntries.go` that tries to remove the sysrepo entries associated with the SAD and SPD entries from a set of servers. 
-
-You can change the servers ips at **line 49**
-
-Note that you should first kill the ccips process before trying to remove the entries from sysrepo. 
-
-### Removing SAD and SPD entries from kernel
-
-* SPD entries:
-```
-ip xfrm policy flush
-```
-* SAD entries:
-```
-ip xfrm state flush
-```
-
-
-## G2G
-![](https://hackmd.io/_uploads/rkmumMFM6.png)
-
-### Controller request
-To configure a G2G tunnel (tunnel mode) so you can enable a encrypted communication between networks 192.168.100.0/24 and 192.168.200.0/24 you can request the following to the controller.
-
-```bash!
-curl -X 'POST' \
-'http://10.0.0.82:5000/ccips' \
--H 'accept: application/json' \
--H 'Content-Type: application/json' \
--d '{
-"nodes": [
- {
-    "ipData": "2.138.181.166",
-    "ipControl": "192.168.165.169",
-    "ipDMZ": "192.168.1.141",
-     "networkInternal" : "192.168.1.0/24" 
- },
- {
-     "ipData": "195.37.154.72",
-     "ipControl": "10.10.244.245",
-     "ipDMZ": "192.168.10.2",
-     "networkInternal" : "192.168.10.0/24"
- }
-],
-"encAlg": [
- "aes-cbc"
-],
-"intAlg": [
- "sha2-256"
-],
-"softLifetime": {
- "nTime": 15
-},
-"hardLifetime": {
- "nTime": 30
-}
-}'
-curl -X 'POST' \
-'http://10.0.0.82:5000/ccips' \
--H 'accept: application/json' \
--H 'Content-Type: application/json' \
--d '{
-"nodes": [
- {
-    "ipData": "2.138.181.166",
-    "ipControl": "192.168.165.169",
-    "ipDMZ": "192.168.1.141",
-     "networkInternal" : "192.168.1.0/24" 
- },
- {
-     "ipData": "195.37.154.72",
-     "ipControl": "10.10.244.245",
-     "ipDMZ": "192.168.10.2",
-     "networkInternal" : "192.168.10.0/24"
- }
-],
-"encAlg": [
- "aes-cbc"
-],
-"intAlg": [
- "sha2-256"
-],
-"softLifetime": {
- "nTime": 15
-},
-"hardLifetime": {
- "nTime": 30
-}
-}'
-
-```
-### How to check the entries:
-* SPD entries:
-```
-ip xfrm policy
-```
-* SAD entries:
-```
-ip xfrm state
-```
-
-### Reset scenario
-
-## Standard reset
-If everything has run succesfuly, you can delete the deployed tunnel following this command:
 ```bash
-curl -X 'DELETE' \
-  'http://controller_ip:5000/ccips/{id}'
+git clone https://github.com/pmars21/GUI.git
+cd GUI
 ```
 
+### 3. Create and activate a Python virtual environment
 
-### Removing entries from sysrepo
-
-If you are running the ccips without using the cointainer, it could be possible to have some entries stuck in sysrepo. To remove them, under the directory `examples` in the ccips_controller proyect, there is an script called `removeEntries.go` that tries to remove the sysrepo entries associated with the SAD and SPD entries from a set of servers. 
-
-You can change the servers ips at **line 49**
-
-Note that you should first kill the ccips process before trying to remove the entries from sysrepo. 
-
-### Removing SAD and SPD entries from kernel
-
-* SPD entries:
-```
-ip xfrm policy flush
-```
-* SAD entries:
-```
-ip xfrm state flush
+```bash
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-# Modes of operation
-![](https://hackmd.io/_uploads/Hk6Mhj9xa.png)
+### 4. Install requiered packages on the virtual environmnet
 
-## Host-To-Host
-This mode of operation, is for only between two hosts, with direct visibility.
+```bash
+pip install flask
+pip install flask requests
+```
 
-![](https://hackmd.io/_uploads/SJlfhi9la.png)
+### 5. Run the project
 
-## Gateway-To-Gateway
-This mode of operation, is for enabling a protected communication between two subnetworks.
+```bash
+flask --app flaskr run --host=host_IP_adress --port=Desired_port
+```
+---
 
-![](https://hackmd.io/_uploads/ByTxhscx6.png)
+## ✍️ Author
+
+Pablo Martinez Seco de Herrera.
