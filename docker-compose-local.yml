@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  # CCIPS Controller (Go, puerto 5000)
+  controller:
+    build:
+      context: ./ccips_controller
+      dockerfile: Dockerfile
+    container_name: ccips_controller
+    networks:
+      control:
+        ipv4_address: 192.168.100.100
+    ports:
+      - "5000:5000"
+    environment:
+      - GIN_MODE=release
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # CCIPS Agent 1 (Sysrepo + Netopeer2 + PF_KEY/XFRM)
+  agent1:
+    build:
+      context: ./ccips-cfgipsec
+      dockerfile: Dockerfile
+    container_name: ccips_agent1
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      control:
+        ipv4_address: 192.168.100.101
+      data:
+        ipv4_address: 10.0.0.101
+      internal1:
+        ipv4_address: 192.168.1.100
+    environment:
+      - SYSREPO_REPOSITORY_PATH=/etc/sysrepo
+    healthcheck:
+      test: ["CMD", "netstat", "-tlnp", "|", "grep", "830"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # CCIPS Agent 2 (Sysrepo + Netopeer2 + PF_KEY/XFRM)
+  agent2:
+    build:
+      context: ./ccips-cfgipsec
+      dockerfile: Dockerfile
+    container_name: ccips_agent2
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      control:
+        ipv4_address: 192.168.100.102
+      data:
+        ipv4_address: 10.0.0.102
+      internal2:
+        ipv4_address: 192.168.2.100
+    environment:
+      - SYSREPO_REPOSITORY_PATH=/etc/sysrepo
+    healthcheck:
+      test: ["CMD", "netstat", "-tlnp", "|", "grep", "830"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Test container 1 (para validar conectividad desde red interna 1)
+  test1:
+    image: alpine:latest
+    container_name: test1
+    cap_add:
+      - NET_ADMIN
+    networks:
+      internal1:
+        ipv4_address: 192.168.1.101
+    entrypoint: /bin/sh
+    stdin_open: true
+    tty: true
+    command: -c "apk add --no-cache iputils iproute2 && sleep infinity"
+
+  # Test container 2 (para validar conectividad desde red interna 2)
+  test2:
+    image: alpine:latest
+    container_name: test2
+    cap_add:
+      - NET_ADMIN
+    networks:
+      internal2:
+        ipv4_address: 192.168.2.101
+    entrypoint: /bin/sh
+    stdin_open: true
+    tty: true
+    command: -c "apk add --no-cache iputils iproute2 && sleep infinity"
+
+networks:
+  # Red de datos (túnel IPsec entre agentes)
+  data:
+    name: data
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+
+  # Red interna 1 (detrás del agente1)
+  internal1:
+    name: internal1
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+
+  # Red interna 2 (detrás del agente2)
+  internal2:
+    name: internal2
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.2.0/24
+
+  # Red de control (NETCONF/NETOPEER2 entre controller y agentes)
+  control:
+    name: control
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

@@ -45,18 +45,18 @@ const (
 )
 
 var ENCKEYLENGTH = map[EncAlgType]int64{
-	DESCBC:       8,  //
-	TRIPLEDESCBC: 10, //
-	CASTCBC:      16, //
-	BLOWFISHCBC:  24, //
-	AESCBC:       32, //
-	AESCTR:       64, //
-	AESCCMV8:     32,
-	AESCCMV12:    48,
-	AESCCMV16:    64,
-	AESGCMV8:     32,
-	AESGCMV12:    48,
-	AESGCMV16:    64,
+	DESCBC:       8,  // DES: 8 bytes
+	TRIPLEDESCBC: 24, // 3DES: 24 bytes
+	CASTCBC:      16, // CAST: 16 bytes
+	BLOWFISHCBC:  24, // Blowfish: 24 bytes
+	AESCBC:       32, // AES-256-CBC: 32 bytes
+	AESCTR:       32, // AES-256-CTR: 32 bytes (sin salt extra)
+	AESCCMV8:     20, // AES-128-CCM: 16 + 4 salt
+	AESCCMV12:    28, // AES-192-CCM: 24 + 4 salt
+	AESCCMV16:    36, // AES-256-CCM: 32 + 4 salt
+	AESGCMV8:     20, // AES-128-GCM: 16 + 4 salt (RFC4106)
+	AESGCMV12:    28, // AES-192-GCM: 24 + 4 salt (RFC4106)
+	AESGCMV16:    36, // AES-256-GCM: 32 + 4 salt (RFC4106)
 }
 
 var AUTHKEYLENGTH = map[AuthAlgType]int64{

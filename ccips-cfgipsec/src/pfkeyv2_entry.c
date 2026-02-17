@@ -613,60 +613,33 @@ int pf_addsad(sad_entry_node *sad_node) {
             keyext = (struct sadb_key *) p;
             keyext->sadb_key_exttype = SADB_EXT_KEY_ENCRYPT;
             keyext->sadb_key_reserved = 0;
-            // INFO("-----------KeyExt size %d",sizeof(*keyext)); 
-            if(sad_node->encryption_alg == SADB_EALG_DESCBC){
-                DBG("selected SADB_EALG_DESCBC");
-                    keyext->sadb_key_len = (sizeof(*keyext) + (EALG_DESCBC_KEY_BITS/8) + 7) / 8;
-                    keyext->sadb_key_bits = EALG_DESCBC_KEY_BITS;
-            } // SADB_X_EALG_AESCBC
-            else if (sad_node->encryption_alg==SADB_X_EALG_AESCBC){
-                DBG("selected SADB_X_EALG_AESCBC");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_KEY_BITS;
-            } else if (sad_node->encryption_alg==SADB_EALG_3DESCBC) {
-                DBG("selected SADB_EALG_3DESCBC");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EALG_3DESCBC_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EALG_3DESCBC_KEY_BITS;
-            } else if (sad_node->encryption_alg==SADB_X_EALG_CASTCBC) {
-                DBG("selected SADB_X_EALG_CASTCBC");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_CASTCBC_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_CASTCBC_KEY_BITS;
-            } else if (sad_node->encryption_alg==SADB_X_EALG_AESCTR) {
-                DBG("selected SADB_X_EALG_AESCTR");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AESCTR_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AESCTR_KEY_BITS;
-            } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_CCM_ICV8) {
-                DBG("selected SADB_X_EALG_AES_CCM_ICV8");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_CCM_ICV8_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_CCM_ICV8_KEY_BITS;
-            } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_CCM_ICV12) {
-                DBG("selected SADB_X_EALG_AES_CCM_ICV12");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_CCM_ICV12_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_CCM_ICV12_KEY_BITS;
-            } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_CCM_ICV16) {
-                DBG("selected SADB_X_EALG_AES_CCM_ICV16");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_CCM_ICV16_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_CCM_ICV16_KEY_BITS;
-            } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_GCM_ICV8) {
-                DBG("selected SADB_X_EALG_AES_GCM_ICV8");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_GCM_ICV8_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_GCM_ICV8_KEY_BITS;
-            } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_GCM_ICV12) {
-                DBG("selected SADB_X_EALG_AES_GCM_ICV12");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_GCM_ICV12_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_GCM_ICV12_KEY_BITS;
-            // SADB_X_EALG_AES_GCM_ICV16
-            } else if (sad_node -> encryption_alg==SADB_X_EALG_AES_GCM_ICV16) {
-                DBG("selected SADB_X_EALG_AES_GCM_ICV16");
-                keyext->sadb_key_len = (sizeof(*keyext) + (EAL_AES_GCM_ICV16_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = EAL_AES_GCM_ICV16_KEY_BITS;
+            
+            /* Convertir clave de cifrado de hex a bytes */
+            unsigned char *enc_key_bytes = hexstr_to_char(sad_node->encryption_key);
+            if (enc_key_bytes == NULL) {
+                ERR("hexstr_to_char failed for encryption_key");
+                close(s);
+                return SR_ERR_OPERATION_FAILED;
             }
-            INFO("-----------Key length %d",keyext->sadb_key_len); 
-            memcpy(keyext + 1, sad_node->encryption_key, strlen(sad_node->encryption_key));
-            //DBG("PFKEY ADD SAD - enc key: %s\n", sad_node->encryption_key);
-            //unsigned char *tmp_string = hexToByte(sad_node->encryption_key);
-            //memcpy(keyext + 1, tmp_string, keyext->sadb_key_bits/8);
-            //free(tmp_string);
+            
+            /* Calcular longitud REAL de la clave a partir del string hex */
+            size_t hex_len = strlen(sad_node->encryption_key);
+            /* Quitar ':' si los hay */
+            size_t colon_count = 0;
+            for (size_t i = 0; i < hex_len; i++) {
+                if (sad_node->encryption_key[i] == ':') colon_count++;
+            }
+            size_t enc_key_len = (hex_len - colon_count) / 2;
+            
+            keyext->sadb_key_bits = enc_key_len * 8;
+            keyext->sadb_key_len = (sizeof(*keyext) + enc_key_len + 7) / 8;
+            
+            INFO("Encryption key: hex_len=%zu, real_bytes=%zu, bits=%d", 
+                 hex_len, enc_key_len, keyext->sadb_key_bits);
+            
+            memcpy(keyext + 1, enc_key_bytes, enc_key_len);
+            free(enc_key_bytes);
+            
             len += keyext->sadb_key_len * 8;
             p += keyext->sadb_key_len * 8;
     }
@@ -674,27 +647,39 @@ int pf_addsad(sad_entry_node *sad_node) {
     // TODO support more algorithms
     if(sad_node->integrity_alg != SADB_AALG_NONE){
         keyext = (struct sadb_key *) p;
-            keyext->sadb_key_exttype = SADB_EXT_KEY_AUTH;
-            keyext->sadb_key_reserved = 0;
-            if(sad_node->integrity_alg == SADB_AALG_MD5HMAC){
-                keyext->sadb_key_len = (sizeof(*keyext) + (AALG_MD5HMAC_KEY_BITS/8) + 7) / 8;
-                keyext->sadb_key_bits = AALG_MD5HMAC_KEY_BITS;
-            }
-            else if(sad_node->integrity_alg == SADB_AALG_SHA1HMAC) {
-                    keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA1HMAC_KEY_BITS/8) + 7) / 8;
-                    keyext->sadb_key_bits = AALG_SHA1HMAC_KEY_BITS;
-            }
-            else if (sad_node->integrity_alg == SADB_X_AALG_SHA2_256HMAC) {
-                    keyext->sadb_key_len = (sizeof(*keyext) + (AALG_SHA2_256HMAC_KEY_BITS/8) + 7) / 8;
-                    keyext->sadb_key_bits = AALG_SHA2_256HMAC_KEY_BITS;
-            }
-            DBG("PFKEY ADD SAD - int key: %s\n", sad_node->integrity_key);
-            //unsigned char *tmp_string = hexToByte(sad_node->integrity_key);
-            //memcpy(keyext + 1, tmp_string, (keyext->sadb_key_bits)/8);
-            memcpy(keyext + 1, sad_node->integrity_key,  strlen(sad_node->integrity_key));
-            len += keyext->sadb_key_len * 8;
-            p += keyext->sadb_key_len * 8;
+        keyext->sadb_key_exttype = SADB_EXT_KEY_AUTH;
+        keyext->sadb_key_reserved = 0;
+        
+        /* Convertir clave de integridad de hex a bytes */
+        unsigned char *int_key_bytes = hexstr_to_char(sad_node->integrity_key);
+        if (int_key_bytes == NULL) {
+            ERR("hexstr_to_char failed for integrity_key");
+            close(s);
+            return SR_ERR_OPERATION_FAILED;
+        }
+        
+        /* Calcular longitud REAL de la clave a partir del string hex */
+        size_t hex_len = strlen(sad_node->integrity_key);
+        size_t colon_count = 0;
+        for (size_t i = 0; i < hex_len; i++) {
+            if (sad_node->integrity_key[i] == ':') colon_count++;
+        }
+        size_t int_key_len = (hex_len - colon_count) / 2;
+        
+        keyext->sadb_key_bits = int_key_len * 8;
+        keyext->sadb_key_len = (sizeof(*keyext) + int_key_len + 7) / 8;
+        
+        INFO("Integrity key: hex_len=%zu, real_bytes=%zu, bits=%d", 
+             hex_len, int_key_len, keyext->sadb_key_bits);
+        
+        memcpy(keyext + 1, int_key_bytes, int_key_len);
+        free(int_key_bytes);
+        
+        len += keyext->sadb_key_len * 8;
+        p += keyext->sadb_key_len * 8;
     }
+
+
     msg->sadb_msg_len = len / 8;
     INFO("print_sadb_msg pfkeyv2_addsad:");
     print_sadb_msg(buf, len);

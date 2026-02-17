@@ -1,4 +1,5 @@
 #include "sysrepo_entries.h"
+#include "xfrm_netlink.h"
 
 sad_entry_node *init_sad_node = NULL;
 spd_entry_node* init_spd_node = NULL;
@@ -521,9 +522,9 @@ int removeSAD_entry(sr_session_ctx_t *sess, sr_change_iter_t *it,char *xpath,cha
 
     sad_entry_node *node = get_sad_node(sad_name);
     if (node != NULL) {
-        rc = pf_delsad(node);
+        rc = xfrm_del_sa(node);
         if (SR_ERR_OK != rc){
-            ERR("Remove SAD in pfkeyv2_delsad: %s",sr_strerror(rc));
+            ERR("Remove SAD in xfrm_del_sa: %s",sr_strerror(rc));
             rc = SR_ERR_OPERATION_FAILED;
         } else {
             rc = del_sad_node(sad_name);
@@ -830,7 +831,7 @@ int addSAD_entry(sr_session_ctx_t *sess, sr_change_iter_t *it,char *xpath,char *
     }
 
     add_sad_node(sad_node);
-    rc = pf_addsad(sad_node);
+    rc = xfrm_add_sa(sad_node);
 
     if (SR_ERR_OK != rc) {
         ERR("ADD SAD in getSAD_entry: %s", sr_strerror(rc));

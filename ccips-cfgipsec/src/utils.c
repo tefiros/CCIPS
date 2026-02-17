@@ -339,21 +339,64 @@ void remove_all_chars(char* str, char c) {
 // function to convert a hex string to a byte array
 unsigned char* hexstr_to_char(const char* hexstr)
 {
-	// make a copy of the input string
+    if (hexstr == NULL) {
+        return NULL;
+    }
+
+    // make a copy of the input string
     char* hexstr_copy = strdup(hexstr);
     if (hexstr_copy == NULL) {
         return NULL;
     }
 
-	remove_all_chars(hexstr_copy, ':');
-	size_t len = strlen(hexstr_copy);
-    if (len % 2 != 0)
+    remove_all_chars(hexstr_copy, ':');
+    size_t len = strlen(hexstr_copy);
+    
+    if (len % 2 != 0) {
+        free(hexstr_copy);
         return NULL;
+    }
+    
     size_t final_len = len / 2;
-    unsigned char* chrs = (unsigned char*)malloc((final_len+1) * sizeof(*chrs));
-    for (size_t i=0, j=0; j<final_len; i+=2, j++)
-        chrs[j] = (hexstr_copy[i] % 32 + 9) % 25 * 16 + (hexstr_copy[i+1] % 32 + 9) % 25;
-    chrs[final_len] = '\0';
+    unsigned char* chrs = (unsigned char*)malloc(final_len * sizeof(*chrs));
+    if (chrs == NULL) {
+        free(hexstr_copy);
+        return NULL;
+    }
+    
+    for (size_t i = 0, j = 0; j < final_len; i += 2, j++) {
+        unsigned char high, low;
+        
+        // Convert high nibble
+        if (hexstr_copy[i] >= '0' && hexstr_copy[i] <= '9')
+            high = hexstr_copy[i] - '0';
+        else if (hexstr_copy[i] >= 'a' && hexstr_copy[i] <= 'f')
+            high = hexstr_copy[i] - 'a' + 10;
+        else if (hexstr_copy[i] >= 'A' && hexstr_copy[i] <= 'F')
+            high = hexstr_copy[i] - 'A' + 10;
+        else {
+            free(hexstr_copy);
+            free(chrs);
+            return NULL;
+        }
+        
+        // Convert low nibble
+        if (hexstr_copy[i+1] >= '0' && hexstr_copy[i+1] <= '9')
+            low = hexstr_copy[i+1] - '0';
+        else if (hexstr_copy[i+1] >= 'a' && hexstr_copy[i+1] <= 'f')
+            low = hexstr_copy[i+1] - 'a' + 10;
+        else if (hexstr_copy[i+1] >= 'A' && hexstr_copy[i+1] <= 'F')
+            low = hexstr_copy[i+1] - 'A' + 10;
+        else {
+            free(hexstr_copy);
+            free(chrs);
+            return NULL;
+        }
+        
+        chrs[j] = (high << 4) | low;
+    }
+    
+    free(hexstr_copy);
     return chrs;
 }
 
