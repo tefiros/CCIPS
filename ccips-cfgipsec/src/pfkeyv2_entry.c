@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Gabriel López <gabilm@um.es>, Rafael Marín <rafa@um.es>, Fernando Pereñiguez <fernando.pereniguez@cud.upct.es> 
- *
+ * Copyright (c) 2025 Telefónica Innovación Digital (mattinantartiko.elorzaforcada@telefonica.com), victor.hernandofernandez@telefonica.com
  * This file is part of cfgipsec2.
  *
  * cfgipsec2 is free software: you can redistribute it and/or modify
