@@ -19,6 +19,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+//prueba
+
 type StorageHandler struct {
 	storage map[uuid.UUID]*Handler
 	lock    sync.RWMutex
