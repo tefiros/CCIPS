@@ -241,8 +241,8 @@ func (c *IpsecConfig) CreateSADConfigJson() (outCfg string, inCfg string, err er
 	case G2G:
 		{
 			// First set the config for the
-			outCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd) //antes c.dataOrigin donde DMZ
-			inCfg = formatG2GSADValues(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dmzEnd)  //antes c.dataOrigin donde DMZ; dmzEnd antes era dataEnd
+			outCfg = formatG2GSADValuesJson(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd) //antes c.dataOrigin donde DMZ
+			inCfg = formatG2GSADValuesJson(c, c.prefixOrigin, c.prefixEnd, c.dataOrigin, c.dmzEnd)  //antes c.dataOrigin donde DMZ; dmzEnd antes era dataEnd
 		} //(c, c.prefixEnd, c.prefixOrigin, c.dmzEnd, c.dataOrigin)
 	default:
 		outCfg = formatH2HSADValuesJson(c, c.dataOrigin, c.dataEnd)
@@ -274,8 +274,8 @@ func (c *IpsecConfig) CreateSPDConfigJson() (outCfg string, inCfg string, err er
 	case G2G:
 		{
 			// First set the config for the
-			outCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "outbound") // antes c.dataOrigin donde DMZ
-			inCfg = formatG2GSPDValues(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "inbound")   // antes c.dataOrigin donde DMZ igual que la de arriba los origenes y ends
+			outCfg = formatG2GSPDValuesJson(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "outbound") // antes c.dataOrigin donde DMZ
+			inCfg = formatG2GSPDValuesJson(c, c.prefixOrigin, c.prefixEnd, c.dmzOrigin, c.dataEnd, "inbound")   // antes c.dataOrigin donde DMZ igual que la de arriba los origenes y ends
 		} //(c, c.prefixEnd, c.prefixOrigin, c.dmzEnd, c.dataOrigin, "inbound")
 	default:
 		{
