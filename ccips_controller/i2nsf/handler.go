@@ -185,26 +185,26 @@ func NewHandler(request *swagger.I2NSFRequest, id uuid.UUID) (*Handler, error) {
 func newHandler(node1, node2 string, cfg1, cfg2 *IpsecConfig) (*Handler, error) {
 	s1Nots, err := EstablishSession(node1)
 	if err != nil {
-		log.Error("There was an error trying to setup the session with node %s: %s", node1, err.Error())
-		return nil, err
+		log.Error("No NETCONF Connetion... Skipping %s: %s", node1, err.Error())
+		//return nil, err
 	}
 
 	s2Nots, err := EstablishSession(node2)
 	if err != nil {
-		log.Error("There was an error trying to setup the session with node %s: %s", node2, err.Error())
-		return nil, err
+		log.Error("No NETCONF Connetion... Skipping %s: %s", node2, err.Error())
+		//return nil, err
 	}
 
 	s1, err := EstablishSession(node1)
 	if err != nil {
-		log.Error("The:re was an error trying to setup the session with node %s", node1)
-		return nil, err
+		log.Error("No NETCONF Connetion... Skipping %s", node1)
+		//return nil, err
 	}
 
 	s2, err := EstablishSession(node2)
 	if err != nil {
-		log.Error("There was an error trying to setup the session with node %s", node2)
-		return nil, err
+		log.Error("No NETCONF Connetion... Skipping %s", node2)
+		//return nil, err
 	}
 
 	h := &Handler{
