@@ -46,6 +46,22 @@ func LoadTemplates(dirPath string) error {
 	if err != nil {
 		return err
 	}
+	G2GTemplates[addSadJson], err = readTemplate(dirPath, "g2g/add_sad_g2g.json")
+	if err != nil {
+		return err
+	}
+	G2GTemplates[addSpdJson], err = readTemplate(dirPath, "g2g/add_spd_g2g.json")
+	if err != nil {
+		return err
+	}
+	G2GTemplates[delSadJson], err = readTemplate(dirPath, "g2g/del_sad_g2g.json")
+	if err != nil {
+		return err
+	}
+	G2GTemplates[delSpdJson], err = readTemplate(dirPath, "g2g/del_spd_g2g.json")
+	if err != nil {
+		return err
+	}
 	// Then load the h2h templates
 	H2hTemplates[AddSAD], err = readTemplate(dirPath, "h2h/add_sad_h2h.xml")
 	if err != nil {
@@ -144,9 +160,51 @@ func formatG2GSADValues(config *IpsecConfig, localPrefix, remotePrefix, local, r
 	return t
 }
 
+func formatG2GSADValuesJSON(config *IpsecConfig, localPrefix, remotePrefix, local, remote string) string {
+	t := G2GTemplates[addSadJson]
+	// NOTE: we need to separate the ID_NAME when adding new associations since if we dond do this
+	// we cannot differentiate and sysrepo instead of creating will modify.
+	t = replace(t, "ID_NAME", fmt.Sprintf("%s_%d", config.name, config.spi))
+	t = replace(t, "REQ_ID", config.reqId)
+	t = replace(t, "LOCAL_PREFIX", localPrefix)
+	t = replace(t, "REMOTE_PREFIX", remotePrefix)
+	t = replace(t, "ENC_ALG", config.cryptoConfig.encAlg)
+	t = replace(t, "ENC_KEY", config.cryptoConfig.encKey)
+	t = replace(t, "ENC_IV", config.cryptoConfig.iv)
+	t = replace(t, "INT_ALG", config.cryptoConfig.intAlg)
+	t = replace(t, "INT_KEY", config.cryptoConfig.intKey)
+	t = replace(t, "HARD_BYTES", config.hardLifetime.nBytes)
+	t = replace(t, "HARD_PACKETS", config.hardLifetime.nPackets)
+	t = replace(t, "HARD_TIME", config.hardLifetime.time)
+	t = replace(t, "HARD_IDLE", config.hardLifetime.timeIdle)
+	t = replace(t, "SOFT_BYTES", config.softLifetime.nBytes)
+	t = replace(t, "SOFT_PACKETS", config.softLifetime.nPackets)
+	t = replace(t, "SOFT_TIME", config.softLifetime.time)
+	t = replace(t, "SOFT_IDLE", config.softLifetime.timeIdle)
+	t = replace(t, "LOCAL_TUNNEL", local)
+	t = replace(t, "REMOTE_TUNNEL", remote)
+	t = replace(t, "SPI", config.spi)
+	return t
+}
+
 // formatG2GSPDValues Return the XML configuration of a SAD entry based in the input
 func formatG2GSPDValues(config *IpsecConfig, localPrefix, remotePrefix, local, remote, direction string) string {
 	t := G2GTemplates[AddSPD]
+	t = replace(t, "ID_NAME", fmt.Sprintf("%s", config.name))
+	t = replace(t, "REQ_ID", config.reqId)
+	t = replace(t, "LOCAL_PREFIX", localPrefix)
+	t = replace(t, "REMOTE_PREFIX", remotePrefix)
+	t = replace(t, "ENC_ALG", config.cryptoConfig.encAlg)
+	t = replace(t, "INT_ALG", config.cryptoConfig.intAlg)
+	t = replace(t, "LOCAL_TUNNEL", local)
+	t = replace(t, "REMOTE_TUNNEL", remote)
+	t = replace(t, "DIRECTION", direction)
+	t = replace(t, "ENC_KEY_LENGTH", config.cryptoConfig.encKeyLength)
+	return t
+}
+
+func formatG2GSPDValuesJSON(config *IpsecConfig, localPrefix, remotePrefix, local, remote, direction string) string {
+	t := G2GTemplates[addSpdJson]
 	t = replace(t, "ID_NAME", fmt.Sprintf("%s", config.name))
 	t = replace(t, "REQ_ID", config.reqId)
 	t = replace(t, "LOCAL_PREFIX", localPrefix)
