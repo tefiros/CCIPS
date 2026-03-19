@@ -459,7 +459,7 @@ func EstablishSession(address string) (*netconf.Session, error) {
 		User:            "netconf",
 		Auth:            []ssh.AuthMethod{ssh.Password("netconf")},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         time.Second * 20,
+		Timeout:         time.Second * 5,
 	}
 	s, err := netconf.DialSSH(fmt.Sprintf("%s:%d", address, 830), sshConfig)
 	if err != nil {
