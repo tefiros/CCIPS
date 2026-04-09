@@ -10,7 +10,7 @@
 
     <!-- Form for tunnel deletion, it sends a POST request -->
     <form method="post">
-        <label for="data_id">Selct Tunnel ID:</label>
+        <label for="data_id">Select Tunnel ID:</label>
         <select id="delete_id" name="delete_id">
             <option value="">-- Select Tunnel --</option>
         </select>
@@ -18,73 +18,47 @@
     </form>
 
     <script>
-        // Function to fill the dropdown menu with tunnel IDs from localStorage
-        function populateDropdown() {
-            let select = document.getElementById("delete_id");
-            select.innerHTML = '<option value="">-- Select Tunnel --</option>'; // default option when the menu is empty
-            
-            //creates a new option elemnt for each tunnel ID
-            let tunnels = JSON.parse(localStorage.getItem("tunnels") || "[]");  //reads the tunnels from localStorage and converts them from JSON to an array format or fills empty array
-            tunnels.forEach(id => {
-                let option = document.createElement("option"); //dynamic creates a html elemnt and add it to the select menu
-                option.value = id;
-                option.text = id;
-                select.appendChild(option); //adds the new created option with both value and text ID to the select menu
-            });
-        }
-    
-        function updateViewDropdown() {
-            let viewDropdown = parent.document.querySelector("#data_id"); 
-            if (!viewDropdown) return;
-    
-            viewDropdown.innerHTML = '<option value="">-- Select Tunnel --</option>';
-    
-            let tunnels = JSON.parse(localStorage.getItem("tunnels") || "[]");
-            tunnels.forEach(id => {
-                let option = document.createElement("option");
-                option.value = id;
-                option.text = id;
-                viewDropdown.appendChild(option);
-            });
-        }
-    
-        // when window loads fills the dropdowan menu
+        // Poblar el dropdown con los IDs obtenidos desde /ccips-all
         window.onload = function() {
-            populateDropdown();
+            let select = document.getElementById("delete_id");
+            fetch('/ccips-all')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error fetching tunnel list: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(id => {
+                            let option = document.createElement("option");
+                            option.value = id;
+                            option.text = id;
+                            select.appendChild(option);
+                        });
+                    } else {
+                        console.error('Expected array of IDs, got:', data);
+                        let errorOption = document.createElement("option");
+                        errorOption.value = "";
+                        errorOption.text = "Formato de respuesta inválido";
+                        select.appendChild(errorOption);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    let errorOption = document.createElement("option");
+                    errorOption.value = "";
+                    errorOption.text = "No se pudo cargar la lista de túneles";
+                    select.appendChild(errorOption);
+                });
         };
-    
-        //  listen to the form submission event after sending and handles it
-        document.querySelector("form").addEventListener("submit", async function(event) { //when a form is submitted, it attaches a listener to the submit event
-            event.preventDefault(); // prevents the page reload as we are working asynchronously (AJAX)
-    
-            //creates a FormData object containing all form fields and their values
-            const formData = new FormData(this); //this refers to the <form> element that triggered the event
-            const response = await fetch("", {  //fetch, sends an HTTP request to the server; "" means it sends to the current page URL.
-                method: "POST",
-                body: formData
-            });
-    
-            const html = await response.text();
-            document.body.innerHTML = html; // replaces the body updating with the 
-    
-            let deletedId = formData.get("delete_id");
-            if (deletedId) {
-                let tunnels = JSON.parse(localStorage.getItem("tunnels") || "[]");
-                let updatedTunnels = tunnels.filter(id => id !== deletedId);
-                localStorage.setItem("tunnels", JSON.stringify(updatedTunnels));
-    
-                populateDropdown(); //  Updates the tunnel list in the local menu
-                updateViewDropdown(); //  Updates the dropdown menu in the view section 
-            }
-        });
     </script>
-    
 
     {% if message %}
     <p style="color: green;">{{ message }}</p>
-{% endif %}
+    {% endif %}
 
-{% if error %}
+    {% if error %}
     <p style="color: red;">{{ error }}</p>
-{% endif %}
+    {% endif %}
 {% endblock %}

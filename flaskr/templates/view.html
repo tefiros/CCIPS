@@ -14,17 +14,39 @@
         <button type="submit">view</button>
     </form>
 
-    <script> // Poblar el dropdown con los IDs guardados en localStorage
+    <script> // Poblar el dropdown con los IDs obtenidos desde /ccips-all
         window.onload = function() {
             let select = document.getElementById("data_id");
-            let tunnels = JSON.parse(localStorage.getItem("tunnels") || "[]");
-    
-            tunnels.forEach(id => {
-                let option = document.createElement("option");
-                option.value = id;
-                option.text = id;
-                select.appendChild(option);
-            });
+            fetch('/ccips-all')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error fetching tunnel list: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(id => {
+                            let option = document.createElement("option");
+                            option.value = id;
+                            option.text = id;
+                            select.appendChild(option);
+                        });
+                    } else {
+                        console.error('Expected array of IDs, got:', data);
+                        let errorOption = document.createElement("option");
+                        errorOption.value = "";
+                        errorOption.text = "Formato de respuesta inválido";
+                        select.appendChild(errorOption);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    let errorOption = document.createElement("option");
+                    errorOption.value = "";
+                    errorOption.text = "No se pudo cargar la lista de túneles";
+                    select.appendChild(errorOption);
+                });
         };
     </script>
 
