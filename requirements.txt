@@ -1,0 +1,7 @@
+Flask==2.3.0
+requests==2.31.0
+python3-pip
+flask
+nnclient
+pydantic
+netconf-client

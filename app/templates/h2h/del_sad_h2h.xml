@@ -1,0 +1,4 @@
+<sad-entry xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="delete">
+    <name>ID_NAME</name>
+    <reqid>REQ_ID</reqid>
+</sad-entry>

@@ -1,0 +1,37 @@
+{
+    "spd-entry": {
+      "name": "ID_NAME",
+      "direction": "DIRECTION",
+      "reqid": "REQ_ID",
+      "ipsec-policy-config": {
+        "anti-replay-window-size": 32,
+        "traffic-selector": {
+          "local-prefix": "LOCAL_PREFIX",
+          "remote-prefix": "REMOTE_PREFIX",
+          "inner-protocol": "any"
+        },
+        "processing-info": {
+          "action": "protect",
+          "ipsec-sa-cfg": {
+            "ext-seq-num": true,
+            "seq-overflow": false,
+            "mode": "tunnel",
+            "protocol-parameters": "esp",
+            "esp-algorithms": {
+              "integrity": "INT_ALG",
+              "encryption": {
+                "id": 1,
+                "algorithm-type": "ENC_ALG",
+                "key-length": "ENC_KEY_LENGTH"
+              }
+            }
+            "tunnel": {
+              "local": "LOCAL_TUNNEL",
+              "remote": "REMOTE_TUNNEL"
+            }
+          }
+        }
+      }
+    }
+  }
+   
