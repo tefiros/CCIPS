@@ -21,7 +21,7 @@
 Includes the latest agent code, it may have some additional code to another development usiging the enarx framework on the /src directory 
 
 ## ccips-controller
-Includes the latest controller code developed on Go.
+Includes the latest controller code developed on Python.
 
 ### Aditional notes
 Each directory has the corresponding README
@@ -31,7 +31,7 @@ Each directory has the corresponding README
 
 ## Requirements
 
-* Have a running CCIPS Controller. [How launch and build](https://github.com/tefiros/CCIPS/blob/main/ccips_controller/README.md)
+* Have a running CCIPS Controller. [How launch and build](app/README.md)
 * Have two CCIPS agents. [Installation guide](https://github.com/tefiros/CCIPS/tree/main/ccips-cfgipsec#installation-guide)
 * A Mgmnt Network to allow communication between the Controller and the agents.
 * A Data network to so both agents can see each other.
@@ -42,7 +42,7 @@ Each directory has the corresponding README
 
 In the VM with the controller just run the following command:
 ```bash!
-docker run -it --rm -p 5000:5000 ccips_controller
+docker run -it --network host --cap-add ALL --name ccips-python --rm ccips-python
 ```
 This will start a process that runs an HTTP server that handles the requests to deploy the IPsec Tunnel.
 
@@ -111,15 +111,6 @@ curl -X 'DELETE' \
   'http://controller_ip:5000/ccips/{id}'
 ```
 
-
-
-### Removing entries from sysrepo
-
-If you are running the ccips without using the cointainer, it could be possible to have some entries stuck in sysrepo. To remove them, under the directory `examples` in the ccips_controller proyect, there is an script called `removeEntries.go` that tries to remove the sysrepo entries associated with the SAD and SPD entries from a set of servers. 
-
-You can change the servers ips at **line 49**
-
-Note that you should first kill the ccips process before trying to remove the entries from sysrepo. 
 
 ### Removing SAD and SPD entries from kernel
 
@@ -225,14 +216,6 @@ curl -X 'DELETE' \
   'http://controller_ip:5000/ccips/{id}'
 ```
 
-
-### Removing entries from sysrepo
-
-If you are running the ccips without using the cointainer, it could be possible to have some entries stuck in sysrepo. To remove them, under the directory `examples` in the ccips_controller proyect, there is an script called `removeEntries.go` that tries to remove the sysrepo entries associated with the SAD and SPD entries from a set of servers. 
-
-You can change the servers ips at **line 49**
-
-Note that you should first kill the ccips process before trying to remove the entries from sysrepo. 
 
 ### Removing SAD and SPD entries from kernel
 
