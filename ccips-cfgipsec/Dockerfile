@@ -1,6 +1,6 @@
 FROM sysrepo/sysrepo-netopeer2
 
-RUN apt update && apt install -y libpthread-stubs0-dev
+RUN apt update && apt install -y libpthread-stubs0-dev iproute2 iputils-ping
 
 # Setup netconf user
 RUN adduser --system netconf
