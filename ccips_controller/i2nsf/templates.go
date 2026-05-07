@@ -316,7 +316,7 @@ func formatDelSADJson(config *IpsecConfig) string {
 	t = replace(t, "ID_NAME", fmt.Sprintf("%s_%d", config.name, config.spi))
 	t = replace(t, "REQ_ID", config.reqId)
 	//t = replace("<sad>DATA</sad>", "DATA", t)
-	return replace(EditconfigTemplate, "REPLACE_DATA", t)
+	return replace(EditconfigTemplateJson, "REPLACE_DATA", t)
 }
 
 // formatDelSPD Return the XML configuration, so we can delete the SPD entry
@@ -333,7 +333,7 @@ func formatDelSPDJson(config *IpsecConfig) string {
 	t = replace(t, "ID_NAME", config.name)
 	t = replace(t, "REQ_ID", config.reqId)
 	//t = replace("<spd>DATA</spd>", "DATA", t)
-	return replace(EditconfigTemplate, "REPLACE_DATA", t)
+	return replace(EditconfigTemplateJson, "REPLACE_DATA", t)
 }
 
 var EditconfigTemplate = "<ipsec-ikeless\n  xmlns=\"urn:ietf:params:xml:ns:yang:ietf-i2nsf-ikeless\"\n  xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\nREPLACE_DATA\n</ipsec-ikeless>"
