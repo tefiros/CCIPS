@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/openshift-telco/go-netconf-client v1.0.6
-	golang.org/x/crypto v0.29.0
+	golang.org/x/crypto v0.54.0
 )
 
 require golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
