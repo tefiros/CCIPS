@@ -202,3 +202,17 @@ curl -X 'POST' \
 
 
 ```
+
+# Configure Algorithm
+
+```
+curl -i -X POST 'http://localhost:5000/configure_algorithm' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "use-qkd": "yes",
+    "pqc-algorithm": "kyber-512",
+    "hybridization-method": "xor",
+    "endpoint1": "192.168.159.35",
+    "endpoint2": "192.168.159.21"
+  }'
+```

@@ -22,6 +22,7 @@ from controller_i2nsf.handler import StorageHandler
 from logger.log import new_logger, info
 from .api_i2_nsf import (
     api_create_i2nsf,
+    api_configure_algorithm,
     api_delete_i2nsf,
     api_status_i2nsf,
     api_all_ids_i2nsf
@@ -87,6 +88,13 @@ routes: List[Route] = [
         method="POST",
         pattern="/ccips",
         handler_func=api_create_i2nsf
+    ),
+
+    Route(
+        name="ApiConfigureAlgorithm",
+        method="POST",
+        pattern="/configure_algorithm",
+        handler_func=api_configure_algorithm
     ),
     
     Route(

@@ -182,6 +182,82 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/responses/Error'
+  /configure_algorithm:
+    post:
+      summary: Receive algorithm configuration
+      operationId: api.configure_algorithm
+      description: Validates and acknowledges an algorithm configuration request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                use-qkd:
+                  type: string
+                  enum: [yes, no]
+                pqc-algorithm:
+                  type: string
+                hybridization-method:
+                  type: string
+                endpoint1:
+                  type: string
+                endpoint2:
+                  type: string
+              required:
+                - use-qkd
+                - pqc-algorithm
+                - hybridization-method
+                - endpoint1
+                - endpoint2
+            example:
+              use-qkd: "yes"
+              pqc-algorithm: "kyber-512"
+              hybridization-method: "xor"
+              endpoint1: "192.0.2.10"
+              endpoint2: "192.0.2.20"
+      responses:
+        '200':
+          description: Request received.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Request received
+                  data:
+                    type: object
+                    properties:
+                      use-qkd:
+                        type: string
+                      pqc-algorithm:
+                        type: string
+                      hybridization-method:
+                        type: string
+                      endpoint1:
+                        type: string
+                      endpoint2:
+                        type: string
+                    required:
+                      - use-qkd
+                      - pqc-algorithm
+                      - hybridization-method
+                      - endpoint1
+                      - endpoint2
+        '400':
+          description: Invalid JSON or fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
 components:
   schemas:
     Node:

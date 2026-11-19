@@ -42,6 +42,33 @@ def api_create_i2nsf():
         return jsonify({"error": f"api_create_i2nsf: {str(e)}"}), 400
 
 
+def api_configure_algorithm():
+    fields = (
+        "use-qkd",
+        "pqc-algorithm",
+        "hybridization-method",
+        "endpoint1",
+        "endpoint2",
+    )
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Invalid JSON object"}), 400
+
+    missing_fields = [field for field in fields if field not in payload]
+    if missing_fields:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+
+    for field in fields:
+        if not isinstance(payload[field], str) or not payload[field].strip():
+            return jsonify({"error": f"Field '{field}' must be a non-empty string"}), 400
+
+    if payload["use-qkd"] not in ("yes", "no"):
+        return jsonify({"error": "Field 'use-qkd' must be 'yes' or 'no'"}), 400
+
+    received_fields = {field: payload[field] for field in fields}
+    return jsonify({"status": "Request received", "data": received_fields}), 200
+
+
 def api_delete_i2nsf(handler_id):
     from .routers import get_storage
     
