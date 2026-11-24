@@ -1,2 +1,3 @@
 app/certs/
 app/certs_PQC/
+app/data/algorithm_configs.sqlite3

@@ -43,6 +43,9 @@ def api_create_i2nsf():
 
 
 def api_configure_algorithm():
+    from .routers import get_storage
+    from controller_i2nsf.algorithm_config_store import PendingAlgorithmConfigExists
+
     fields = (
         "use-qkd",
         "pqc-algorithm",
@@ -66,6 +69,13 @@ def api_configure_algorithm():
         return jsonify({"error": "Field 'use-qkd' must be 'yes' or 'no'"}), 400
 
     received_fields = {field: payload[field] for field in fields}
+    try:
+        get_storage().save_pending_algorithm_config(received_fields)
+    except PendingAlgorithmConfigExists as e:
+        return jsonify({"error": str(e)}), 409
+    except Exception as e:
+        return jsonify({"error": f"Failed to store algorithm configuration: {str(e)}"}), 500
+
     return jsonify({"status": "Request received", "data": received_fields}), 200
 
 

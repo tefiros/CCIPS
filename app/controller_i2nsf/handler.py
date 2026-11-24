@@ -26,6 +26,7 @@ from controller_i2nsf.algs import ENCALGS, AUTHALGS
 from controller_i2nsf.config import IpsecConfig, CryptoConfig
 from controller_i2nsf.templates import generateI2NSFConfig
 from controller_i2nsf.notifications import SADBExpireNotification
+from controller_i2nsf.algorithm_config_store import PendingAlgorithmConfigStore
 from sbi import ssh_netconf, tls_netconf, http_request, https_request
 import xml.etree.ElementTree as ET
 
@@ -48,6 +49,10 @@ class StorageHandler:
     def __init__(self):
         self.storage: Dict[uuid.UUID, 'Handler'] = {}
         self.lock = threading.RLock()
+        self.pending_algorithm_configs = PendingAlgorithmConfigStore.from_environment()
+
+    def save_pending_algorithm_config(self, payload: Dict[str, str]) -> str:
+        return self.pending_algorithm_configs.save(payload)
     
     def create_handler(self, request: models.I2NSFRequest) -> Tuple[Any, Optional[Exception]]:
         try:

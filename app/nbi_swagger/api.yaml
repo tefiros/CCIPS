@@ -186,7 +186,7 @@ paths:
     post:
       summary: Receive algorithm configuration
       operationId: api.configure_algorithm
-      description: Validates and acknowledges an algorithm configuration request.
+      description: Stores one pending configuration per unordered endpoint pair; it expires after one hour by default.
       requestBody:
         required: true
         content:
@@ -219,7 +219,7 @@ paths:
               endpoint2: "192.0.2.20"
       responses:
         '200':
-          description: Request received.
+          description: Request received and configuration stored.
           content:
             application/json:
               schema:
@@ -247,6 +247,10 @@ paths:
                       - hybridization-method
                       - endpoint1
                       - endpoint2
+        '409':
+          description: A pending configuration already exists for this endpoint pair.
+        '500':
+          description: Failed to store the configuration.
         '400':
           description: Invalid JSON or fields.
           content:
