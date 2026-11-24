@@ -46,6 +46,30 @@ docker run -it --network host --cap-add ALL --name ccips-python --rm ccips-pytho
 ```
 This will start a process that runs an HTTP server that handles the requests to deploy the IPsec Tunnel.
 
+### Controller storage
+
+The controller creates its SQLite tables at startup and clears its tunnel and
+pending algorithm records on each start. The default database is
+`app/data/algorithm_configs.sqlite3`; `CCIPS_ALGORITHM_DB_PATH` overrides it.
+Use only one controller process per database file. Restarting does not remove
+IPsec configuration already installed on the agents, and the controller cannot
+recover its previous sessions after a restart.
+
+`POST /configure_algorithm` stores one pending configuration per unordered pair
+of endpoints. Entries expire after one hour by default; set
+`CCIPS_ALGORITHM_CONFIG_TTL_SECONDS` to change this. A successful `POST /ccips`
+associates and consumes a matching configuration using the two nodes'
+`ipControl` values; the tunnel can also be created without a match. The
+associated parameters are stored as metadata only: QKD, PQC and hybridization
+are not applied to the agents. Concurrent attempts to use a reserved
+configuration return HTTP 409.
+
+Tunnel configurations and API status are recorded in SQLite. Live sessions,
+cryptographic keys, and rekey state remain in memory. Tunnel removal currently
+supports NETCONF over SSH; other methods report an error rather than claim
+successful remote cleanup. Failed remote operations may require manual cleanup
+on the agents.
+
 ## Agents
 In this scenario we are deploying two Agent running in docker mode.
 

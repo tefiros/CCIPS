@@ -23,6 +23,7 @@ import uuid as uuid_lib
 
 def api_create_i2nsf():
     from .routers import get_storage
+    from controller_i2nsf.algorithm_config_store import AlgorithmConfigInUse
     
     try:
         cfg_request = request.get_json()
@@ -35,6 +36,8 @@ def api_create_i2nsf():
         print("POST storage object id:", hex(id(storage)))
         response, err = storage.create_handler(cfg)
         if err:
+            if isinstance(err, AlgorithmConfigInUse):
+                return jsonify({"error": str(err)}), 409
             return jsonify({"error": str(err)}), 400
         return jsonify(response), 200
 

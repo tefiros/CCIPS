@@ -105,7 +105,7 @@ def edit_config(session, data):
         print("info    :", getattr(e, "info", None))
         print("XML sent:")
         print(data)
-        return e
+        return False
 
     except Exception as e:
         print("=== Generic exception ===")

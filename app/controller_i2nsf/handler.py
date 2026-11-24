@@ -47,56 +47,98 @@ class StorageHandler:
     """Manages multiple handlers indexed by UUID."""
     
     def __init__(self):
-        self.storage: Dict[uuid.UUID, 'Handler'] = {}
+        self.handlers: Dict[uuid.UUID, 'Handler'] = {}
         self.lock = threading.RLock()
         self.pending_algorithm_configs = PendingAlgorithmConfigStore.from_environment()
+        self.pending_algorithm_configs.reset()
 
     def save_pending_algorithm_config(self, payload: Dict[str, str]) -> str:
         return self.pending_algorithm_configs.save(payload)
     
     def create_handler(self, request: models.I2NSFRequest) -> Tuple[Any, Optional[Exception]]:
+        config_id = None
+        h = None
         try:
+            if len(request.nodes) >= 2 and request.nodes[0].ipControl and request.nodes[1].ipControl:
+                config_id = self.pending_algorithm_configs.reserve(
+                    request.nodes[0].ipControl, request.nodes[1].ipControl
+                )
             handler_id = uuid.uuid4()
             h = Handler(request, handler_id)
+            response = h.cfg[0].parse_config_to_nbi_swagger(str(handler_id))
             if not h.set_initial_config_values():
-                return None, Exception("Failed to set initial config values")
+                raise RuntimeError("Failed to set initial config values; configuration may be partially deployed")
             log.debug("Initial values have been established")
             log.debug("Handler assigned to id %s", handler_id)
             with self.lock:
-                self.storage[handler_id] = h
+                self.handlers[handler_id] = h
+                try:
+                    request_data = (
+                        request.model_dump() if hasattr(request, "model_dump") else request.dict()
+                    )
+                    self.pending_algorithm_configs.save_tunnel(
+                        handler_id, request_data, response, config_id
+                    )
+                except Exception:
+                    del self.handlers[handler_id]
+                    raise
             log.debug("Handler %s stored", handler_id)
-
-            return h.cfg[0].parse_config_to_nbi_swagger(handler_id), None
+            return response, None
 
         except Exception as err:
+            cleanup_errors = []
+            if h is not None:
+                try:
+                    cleanup_error = h.stop()
+                    if cleanup_error:
+                        cleanup_errors.append(f"cleanup failed: {cleanup_error}")
+                except Exception as cleanup_error:
+                    cleanup_errors.append(f"cleanup failed: {cleanup_error}")
+            if config_id is not None:
+                try:
+                    self.pending_algorithm_configs.release(config_id)
+                except Exception as release_error:
+                    cleanup_errors.append(f"failed to release algorithm configuration: {release_error}")
+            if cleanup_errors:
+                message = f"{err}; {'; '.join(cleanup_errors)}"
+                log.error(message)
+                return None, RuntimeError(message)
             return None, err
     
     def delete_handler(self, handler_id: uuid.UUID) -> Optional[Exception]:
         try:
-            if handler_id not in self.storage:
-                return Exception(f"Handler with id {handler_id}, does not exist")
-            h = self.storage[handler_id]
-            err = h.stop()
-            if err is not None:
-                return err
-            del self.storage[handler_id]
+            with self.lock:
+                if self.pending_algorithm_configs.get_tunnel(handler_id) is None:
+                    return Exception(f"Handler with id {handler_id}, does not exist")
+                h = self.handlers.get(handler_id)
+                if h is None:
+                    return RuntimeError(f"Active handler {handler_id} not found")
+                err = h.stop()
+                if err is not None:
+                    return err
+                self.pending_algorithm_configs.delete_tunnel(handler_id)
+                del self.handlers[handler_id]
             return None
         except Exception as err:
             return err
     
     def get_config(self, handler_id: uuid.UUID)  -> Optional[Exception]:
-        if handler_id not in self.storage:
-            return None, Exception(f"Handler {handler_id} not found")
-
-        h = self.storage[handler_id]
-        return h.cfg[0].parse_config_to_nbi_swagger(handler_id), None
+        try:
+            with self.lock:
+                response = self.pending_algorithm_configs.get_tunnel(handler_id)
+                handler = self.handlers.get(handler_id)
+                if response is None:
+                    return None, Exception(f"Handler {handler_id} not found")
+                if handler is None or handler.is_stopped or handler.cleanup_failed:
+                    return None, RuntimeError(f"Handler {handler_id} is not active")
+                return response, None
+        except Exception as err:
+            return None, err
     
     def get_all_ids(self) -> Optional[Exception]:
         try:
-            all_ids = []
             with self.lock:
-                for handler_id in self.storage:
-                    all_ids.append(handler_id)
+                all_ids = self.pending_algorithm_configs.get_tunnel_ids()
             return all_ids, None
         except Exception as err:
             return None, Exception(f"Exception error {err}")
@@ -109,13 +151,36 @@ class Handler:
         self.ids: Dict[str, OutIn] = {}
         self.locker = threading.RLock()
         self.is_stopped = False
+        self.cleanup_failed = False
         self.id = id
         self.method = request.method
-        self._initialize_from_request(request)
+        try:
+            self._initialize_from_request(request)
+        except Exception as err:
+            cleanup_error = self._close_sessions()
+            if cleanup_error:
+                raise RuntimeError(f"{err}; session cleanup failed: {cleanup_error}") from err
+            raise
+
+    def _close_sessions(self) -> Optional[Exception]:
+        errors = []
+        for index, session in enumerate(self.session):
+            if session is None:
+                continue
+            try:
+                if self.method in ("http", "https"):
+                    session.close()
+                else:
+                    session.close_session()
+                self.session[index] = None
+            except Exception as err:
+                log.error("Error closing session: %s", err)
+                errors.append(str(err))
+        return RuntimeError("; ".join(errors)) if errors else None
     
     def process_rekey(self, notification: SADBExpireNotification):
         with self.locker:
-            if self.is_stopped:
+            if self.is_stopped or self.cleanup_failed:
                 return None
 
             s = notification.IPsecName.split("_")
@@ -253,88 +318,88 @@ class Handler:
         match method:
             case "netconf-ssh":
                 try:
-                    s0_nots =  ssh_netconf.establish_session(node0.ipControl, 830)
+                    self.session[2] = s0_nots = ssh_netconf.establish_session(node0.ipControl, 830)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1_nots = ssh_netconf.establish_session(node1.ipControl, 830)
+                    self.session[3] = s1_nots = ssh_netconf.establish_session(node1.ipControl, 830)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
                 try:
-                    s0 = ssh_netconf.establish_session(node0.ipControl, 830)
+                    self.session[0] = s0 = ssh_netconf.establish_session(node0.ipControl, 830)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1 = ssh_netconf.establish_session(node1.ipControl, 830)
+                    self.session[1] = s1 = ssh_netconf.establish_session(node1.ipControl, 830)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
             case "netconf-tls":
                 print("Setting up TLS sessions")
                 try:
-                    s0_nots =  tls_netconf.establish_session(node0.ipControl, 6513)
+                    self.session[2] = s0_nots = tls_netconf.establish_session(node0.ipControl, 6513)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1_nots = tls_netconf.establish_session(node1.ipControl, 6514)
+                    self.session[3] = s1_nots = tls_netconf.establish_session(node1.ipControl, 6514)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
                 try:
-                    s0 = tls_netconf.establish_session(node0.ipControl, 6513)
+                    self.session[0] = s0 = tls_netconf.establish_session(node0.ipControl, 6513)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1 = tls_netconf.establish_session(node1.ipControl, 6514)
+                    self.session[1] = s1 = tls_netconf.establish_session(node1.ipControl, 6514)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
             case "http":
                 print("Setting up TLS sessions")
                 try:
-                    s0_nots =  http_request.establish_session(node0.ipControl, 8080)
+                    self.session[2] = s0_nots = http_request.establish_session(node0.ipControl, 8080)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1_nots = http_request.establish_session(node1.ipControl, 8081)
+                    self.session[3] = s1_nots = http_request.establish_session(node1.ipControl, 8081)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
                 try:
-                    s0 = http_request.establish_session(node0.ipControl, 8080)
+                    self.session[0] = s0 = http_request.establish_session(node0.ipControl, 8080)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1 = http_request.establish_session(node1.ipControl, 8081)
+                    self.session[1] = s1 = http_request.establish_session(node1.ipControl, 8081)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
             case "https":
                 print("Setting up TLS sessions")
                 try:
-                    s0_nots =  https_request.establish_session(node0.ipControl, 4043)
+                    self.session[2] = s0_nots = https_request.establish_session(node0.ipControl, 4043)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1_nots = https_request.establish_session(node1.ipControl, 4044)
+                    self.session[3] = s1_nots = https_request.establish_session(node1.ipControl, 4044)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
                 try:
-                    s0 = https_request.establish_session(node0.ipControl, 4043)
+                    self.session[0] = s0 = https_request.establish_session(node0.ipControl, 4043)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node0}: {str(e)}")
                     raise
                 try:
-                    s1 = https_request.establish_session(node1.ipControl, 4044)
+                    self.session[1] = s1 = https_request.establish_session(node1.ipControl, 4044)
                 except Exception as e:
                     log.error(f"There was an error trying to setup the session with node {node1}: {str(e)}")
                     raise
@@ -515,6 +580,12 @@ class Handler:
 
     def stop(self) -> Optional[Exception]:
         with self.locker:
+            if self.is_stopped:
+                return self._close_sessions()
+            if self.method != "netconf-ssh":
+                return RuntimeError(f"Tunnel cleanup is not implemented for {self.method}")
+            self.cleanup_failed = True
+            errors = []
             for outin in self.ids.values():
                 cfg = outin.cfg
                 s1 = outin.s0
@@ -531,25 +602,25 @@ class Handler:
                         ok = ssh_netconf.edit_config(s1, del_sad)
                         if not ok:
                             log.error("%s: Failed to delete SAD", cfg.origin)
+                            errors.append(f"{cfg.origin}: Failed to delete SAD")
                         ok = ssh_netconf.edit_config(s2, del_sad)
                         if not ok:
                             log.error("%s: Failed to delete SAD", cfg.end)
+                            errors.append(f"{cfg.end}: Failed to delete SAD")
                         time.sleep(10)
                         ok = ssh_netconf.edit_config(s1, del_spd)
                         if not ok:
                             log.error("%s: Failed to delete SPD", cfg.origin)
+                            errors.append(f"{cfg.origin}: Failed to delete SPD")
                         ok = ssh_netconf.edit_config(s2, del_spd)
                         if not ok:
                             log.error("%s: Failed to delete SPD", cfg.end)
-                        log.info("Removed SAD/SPD entries for session %s (reqId=%d)", cfg.name, cfg.req_id)
+                            errors.append(f"{cfg.end}: Failed to delete SPD")
+                        if not errors:
+                            log.info("Removed SAD/SPD entries for session %s (reqId=%d)", cfg.name, cfg.req_id)
+            if errors:
+                return RuntimeError("; ".join(errors))
             self.is_stopped = True
             time.sleep(10)
-            for s in self.session:
-                if s is not None:
-                    try:
-                        s.close_session()
-                    except Exception as e:
-                        log.error(f"Error closing session: {e}")
-
-            return None
+            return self._close_sessions()
 

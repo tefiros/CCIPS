@@ -34,9 +34,14 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/IPsecInfo'
+        '409':
+          description: The matching pending algorithm configuration is already in use.
         '500':
           $ref: '#/components/responses/Error'
-      description: Create the I2NSF IPSec tunnel
+      description: |
+        Create the I2NSF IPsec tunnel. A matching pending algorithm configuration
+        is associated by the nodes' ipControl addresses, without applying its
+        QKD, PQC or hybridization parameters to the agents.
       requestBody:
         content:
           application/json:
