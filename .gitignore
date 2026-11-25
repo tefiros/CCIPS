@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+app/certs_PQC/
+app/old_certs_PQC
+app/certs/
+# Python
+__pycache__/
+*.py[cod]
+
+# Entornos virtuales
+venv/
+.venv/
+
+# VS Code
+.vscode/
+
+# Pytest
+.pytest_cache/
+
+# Otros
+*.log
+
+captura_*
+app/Dockefile
+app/docker-compose.yml

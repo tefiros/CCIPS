@@ -1,0 +1,9 @@
+{
+    "spd-entry": {
+      "nc:operation": "delete",
+      "name": "ID_NAME",
+      "direction": "DIRECTION",
+      "reqid": "REQ_ID"
+    }
+  }
+  

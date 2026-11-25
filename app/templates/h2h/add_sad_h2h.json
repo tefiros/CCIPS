@@ -1,0 +1,42 @@
+{
+    "sad-entry": {
+      "name": "ID_NAME",
+      "reqid": "REQ_ID",
+      "ipsec-sa-config": {
+        "spi": "SPI",
+        "ext-seq-num": true,
+        "seq-overflow": false,
+        "traffic-selector": {
+          "local-prefix": "LOCAL_PREFIX/32",
+          "remote-prefix": "REMOTE_PREFIX/32",
+          "inner-protocol": "any"
+        },
+        "protocol-parameters": "esp",
+        "mode": "transport",
+        "esp-sa": {
+          "encryption": {
+            "encryption-algorithm": "ENC_ALG",
+            "key": "ENC_KEY",
+            "iv": "ENC_IV"
+          },
+          "integrity": {
+            "integrity-algorithm": "INT_ALG",
+            "key": "INT_KEY"
+          }
+        },
+        "sa-lifetime-hard": {
+          "bytes": "HARD_BYTES",
+          "packets": "HARD_PACKETS",
+          "time": "HARD_TIME",
+          "idle": "HARD_IDLE"
+        },
+        "sa-lifetime-soft": {
+          "bytes": "SOFT_BYTES",
+          "packets": "SOFT_PACKETS",
+          "time": "SOFT_TIME",
+          "idle": "SOFT_IDLE"
+        }
+      }
+    }
+  }
+  
