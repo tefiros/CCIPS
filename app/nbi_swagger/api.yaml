@@ -108,6 +108,56 @@ paths:
       description: Remove I2NSF
       tags:
         - I2NSF
+  /ccips/config-hybridization:
+    post:
+      summary: Validate hybridization configuration
+      description: Validates and returns the configuration without forwarding it or applying it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [use-qkd, pqc-algorithm, hybridization-method, endpoint1, endpoint2]
+              properties:
+                use-qkd:
+                  type: string
+                  enum: ["yes", "no"]
+                pqc-algorithm:
+                  type: string
+                  minLength: 1
+                hybridization-method:
+                  type: string
+                  enum: [xor, none]
+                endpoint1:
+                  type: string
+                  format: ipv4
+                endpoint2:
+                  type: string
+                  format: ipv4
+                method:
+                  type: string
+                  minLength: 1
+                  default: http
+            example:
+              use-qkd: "yes"
+              pqc-algorithm: "kyber-512"
+              hybridization-method: "xor"
+              endpoint1: "192.168.159.35"
+              endpoint2: "192.168.159.21"
+              method: "http"
+      responses:
+        '200':
+          description: Validated configuration, including the default method if omitted.
+        '400':
+          description: Invalid JSON or configuration.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
   /forwardqkd:
     post:
       summary: Forward QKD session creation request

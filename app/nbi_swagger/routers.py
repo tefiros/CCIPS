@@ -24,7 +24,8 @@ from .api_i2_nsf import (
     api_create_i2nsf,
     api_delete_i2nsf,
     api_status_i2nsf,
-    api_all_ids_i2nsf
+    api_all_ids_i2nsf,
+    api_config_hybridization
 )
 
 _storage_handler: Optional[StorageHandler] = None
@@ -101,5 +102,12 @@ routes: List[Route] = [
         method="GET",
         pattern="/ccips/<handler_id>",
         handler_func=api_status_i2nsf
+    ),
+
+    Route(
+        name="ApiConfigHybridization",
+        method="POST",
+        pattern="/ccips/config-hybridization",
+        handler_func=api_config_hybridization
     )
 ]

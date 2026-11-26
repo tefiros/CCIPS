@@ -55,6 +55,32 @@ Here you only need to run as follows in each agent.
 docker run -it --network host --cap-add ALL --name ccips_agent --rm ccips_agent
 ```
 
+## Hybridization configuration
+
+Send a JSON configuration to `POST /ccips/config-hybridization`:
+
+```bash
+curl -X POST 'https://controller_ip:5000/ccips/config-hybridization' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "use-qkd": "yes",
+    "pqc-algorithm": "kyber-512",
+    "hybridization-method": "xor",
+    "endpoint1": "192.168.159.35",
+    "endpoint2": "192.168.159.21"
+  }'
+```
+
+The controller's HTTPS certificate must be trusted by the client. All fields shown
+are required: `use-qkd` accepts `yes` or `no`, `hybridization-method` accepts
+`xor` or `none`, and both endpoints must be IPv4 addresses. `pqc-algorithm` must
+be a non-empty string. The optional `method` must also be a non-empty string;
+when omitted, it defaults to `http`.
+
+A valid request returns `200 OK` with the configuration, including `method`.
+Invalid JSON or fields return `400` with an error message. Currently the endpoint
+only validates and returns the configuration; it does not apply or forward it.
+
 ## Deploying the tunnel
 ### H2H
 You can check a similar demo in the [SPIRS Repository](https://www.spirs-project.eu/nextcloud/index.php/s/fBXpkbeH9WGKfMF).

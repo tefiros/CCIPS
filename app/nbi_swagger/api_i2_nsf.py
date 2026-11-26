@@ -19,6 +19,7 @@ limitations under the License.
 """
 from flask import request, jsonify
 from .models import I2NSFRequest
+from ipaddress import IPv4Address, AddressValueError
 import uuid as uuid_lib
 
 def api_create_i2nsf():
@@ -75,3 +76,31 @@ def api_all_ids_i2nsf():
     if err:
         return jsonify({"error": f"api_all_ids_i2nsf: {str(err)}"}), 400
     return jsonify(response), 200
+
+
+def api_config_hybridization():
+    cfg = request.get_json(silent=True)
+    if not isinstance(cfg, dict):
+        return jsonify({"error": "Expected a JSON object"}), 400
+
+    required = ("use-qkd", "pqc-algorithm", "hybridization-method", "endpoint1", "endpoint2")
+    for field in required:
+        if not isinstance(cfg.get(field), str) or not cfg[field].strip():
+            return jsonify({"error": f"{field} must be a non-empty string"}), 400
+
+    if cfg["use-qkd"] not in ("yes", "no"):
+        return jsonify({"error": "use-qkd must be 'yes' or 'no'"}), 400
+    if cfg["hybridization-method"] not in ("xor", "none"):
+        return jsonify({"error": "hybridization-method must be 'xor' or 'none'"}), 400
+    for field in ("endpoint1", "endpoint2"):
+        try:
+            IPv4Address(cfg[field])
+        except AddressValueError:
+            return jsonify({"error": f"{field} must be a valid IPv4 address"}), 400
+
+    if "method" not in cfg:
+        cfg["method"] = "http"
+    elif not isinstance(cfg["method"], str) or not cfg["method"].strip():
+        return jsonify({"error": "method must be a non-empty string"}), 400
+
+    return jsonify(cfg), 200
