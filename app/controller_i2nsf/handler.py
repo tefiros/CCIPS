@@ -19,6 +19,7 @@ import time
 from unittest import case
 import uuid
 import threading
+from copy import deepcopy
 from typing import Dict, Optional, Tuple, Any
 from logger.log import Logger
 import nbi_swagger.models as models
@@ -32,6 +33,28 @@ import xml.etree.ElementTree as ET
 # Constants
 THRESHOLD = 5
 log = Logger() 
+
+
+class HybridizationHandler:
+    """Stores hybridization configurations independently from IPsec handlers."""
+
+    def __init__(self):
+        self.configs: Dict[uuid.UUID, models.HybridizationConfig] = {}
+        self.lock = threading.RLock()
+
+    def store_config(self, config: models.HybridizationConfig) -> uuid.UUID:
+        config_id = uuid.uuid4()
+        with self.lock:
+            self.configs[config_id] = deepcopy(config)
+        return config_id
+
+    def get_config(self, config_id: uuid.UUID) -> Optional[models.HybridizationConfig]:
+        with self.lock:
+            config = self.configs.get(config_id)
+            return deepcopy(config) if config is not None else None
+
+    
+
 
 class OutIn:
     def __init__(self, cfg, s0, s1):

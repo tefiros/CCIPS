@@ -1,12 +1,13 @@
 import sys
 import unittest
 from pathlib import Path
+from uuid import UUID
 
 from flask import Flask
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
-from nbi_swagger.routers import new_router
+from nbi_swagger.routers import get_hybridization_handler, new_router
 
 
 class ConfigHybridizationTest(unittest.TestCase):
@@ -28,7 +29,14 @@ class ConfigHybridizationTest(unittest.TestCase):
     def test_default_and_explicit_method(self):
         response = self.post(self.config)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), {**self.config, "method": "http"})
+        response_data = response.get_json()
+        self.assertEqual(
+            {key: value for key, value in response_data.items() if key != "id"},
+            {**self.config, "method": "http"},
+        )
+        stored_config = get_hybridization_handler().get_config(UUID(response_data["id"]))
+        self.assertIsNotNone(stored_config)
+        self.assertEqual(stored_config.dict(by_alias=True), {**self.config, "method": "http"})
 
         response = self.post({**self.config, "method": "https"})
         self.assertEqual(response.status_code, 200)

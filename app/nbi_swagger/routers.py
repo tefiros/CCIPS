@@ -18,7 +18,7 @@ limitations under the License. '''
 from typing import Callable, List, Optional
 from functools import wraps
 from flask import Blueprint, request
-from controller_i2nsf.handler import StorageHandler
+from controller_i2nsf.handler import HybridizationHandler, StorageHandler
 from logger.log import new_logger, info
 from .api_i2_nsf import (
     api_create_i2nsf,
@@ -29,6 +29,7 @@ from .api_i2_nsf import (
 )
 
 _storage_handler: Optional[StorageHandler] = None
+_hybridization_handler: Optional[HybridizationHandler] = None
 
 class Route:
     def __init__(self, name: str, method: str, pattern: str, handler_func: Callable):
@@ -43,6 +44,11 @@ def get_storage() -> StorageHandler:
         raise RuntimeError("Storage handler not initialized. Call new_router() first.")
     return _storage_handler
 
+def get_hybridization_handler() -> HybridizationHandler:
+    if _hybridization_handler is None:
+        raise RuntimeError("Hybridization handler not initialized. Call new_router() first.")
+    return _hybridization_handler
+
 def _log_route(handler, name):
     @wraps(handler)
     def wrapped(*args, **kwargs):
@@ -55,8 +61,9 @@ def _log_route(handler, name):
     return wrapped
 
 def new_router(storage_handler: StorageHandler) -> Blueprint:
-    global _storage_handler
+    global _storage_handler, _hybridization_handler
     _storage_handler = storage_handler  # Guardar globalmente
+    _hybridization_handler = HybridizationHandler()
     
     new_logger()
     router = Blueprint('ccips', __name__)

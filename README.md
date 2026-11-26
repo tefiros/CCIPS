@@ -77,9 +77,12 @@ are required: `use-qkd` accepts `yes` or `no`, `hybridization-method` accepts
 be a non-empty string. The optional `method` must also be a non-empty string;
 when omitted, it defaults to `http`.
 
-A valid request returns `200 OK` with the configuration, including `method`.
-Invalid JSON or fields return `400` with an error message. Currently the endpoint
-only validates and returns the configuration; it does not apply or forward it.
+A valid request returns `200 OK` with the configuration, its defaulted `method`,
+and a generated `id`. The configuration is stored in a separate in-memory
+hybridization registry; it is independent of `/ccips` IPsec handlers and is lost
+when the controller restarts. Invalid JSON or fields return `400` with an error
+message. This flow does not apply the configuration, contact either endpoint, or
+derive a hybrid key.
 
 ## Deploying the tunnel
 ### H2H

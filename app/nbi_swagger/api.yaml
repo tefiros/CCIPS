@@ -110,8 +110,8 @@ paths:
         - I2NSF
   /ccips/config-hybridization:
     post:
-      summary: Validate hybridization configuration
-      description: Validates and returns the configuration without forwarding it or applying it.
+      summary: Store hybridization configuration
+      description: Validates and stores the configuration in memory independently from I2NSF/IPsec handlers. It is not forwarded or applied.
       requestBody:
         required: true
         content:
@@ -148,7 +148,29 @@ paths:
               method: "http"
       responses:
         '200':
-          description: Validated configuration, including the default method if omitted.
+          description: Stored configuration, including the default method and generated identifier.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  use-qkd:
+                    type: string
+                  pqc-algorithm:
+                    type: string
+                  hybridization-method:
+                    type: string
+                  endpoint1:
+                    type: string
+                    format: ipv4
+                  endpoint2:
+                    type: string
+                    format: ipv4
+                  method:
+                    type: string
         '400':
           description: Invalid JSON or configuration.
           content:

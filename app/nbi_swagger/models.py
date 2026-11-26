@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License. ''' 
 
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
@@ -44,6 +44,18 @@ class I2NSFRequest(BaseModel):
     softLifetime: Optional[LifetimeConfig] = None
     hardLifetime: Optional[LifetimeConfig] = None
     method: str = None
+
+class HybridizationConfig(BaseModel):
+    use_qkd: str = Field(alias="use-qkd")
+    pqc_algorithm: str = Field(alias="pqc-algorithm")
+    hybridization_method: str = Field(alias="hybridization-method")
+    endpoint1: str
+    endpoint2: str
+    method: str = "http"
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
 
 class I2NSFConfigResponse(BaseModel):
     id: string

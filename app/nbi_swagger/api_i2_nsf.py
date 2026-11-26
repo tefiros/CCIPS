@@ -18,7 +18,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from flask import request, jsonify
-from .models import I2NSFRequest
+from .models import HybridizationConfig, I2NSFRequest
 from ipaddress import IPv4Address, AddressValueError
 import uuid as uuid_lib
 
@@ -103,4 +103,10 @@ def api_config_hybridization():
     elif not isinstance(cfg["method"], str) or not cfg["method"].strip():
         return jsonify({"error": "method must be a non-empty string"}), 400
 
-    return jsonify(cfg), 200
+    from .routers import get_hybridization_handler
+
+    hybridization_config = HybridizationConfig(**cfg)
+    config_id = get_hybridization_handler().store_config(hybridization_config)
+    response = hybridization_config.dict(by_alias=True)
+    response["id"] = str(config_id)
+    return jsonify(response), 200
